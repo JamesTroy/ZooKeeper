@@ -4,6 +4,8 @@
 #include "GameFramework/GameModeBase.h"
 #include "ZooGameMode.generated.h"
 
+class AZooEnvironmentSetup;
+
 /**
  * AZooGameMode
  *
@@ -12,23 +14,36 @@
  * game initialization and starting funds.
  */
 UCLASS(Blueprintable, meta = (DisplayName = "Zoo Game Mode"))
-class ZOOKEEPER_API AZooGameMode : public AGameModeBase
-{
-	GENERATED_BODY()
+class ZOOKEEPER_API AZooGameMode : public AGameModeBase {
+  GENERATED_BODY()
 
 public:
-	AZooGameMode();
+  AZooGameMode();
 
-	//~ Begin AGameModeBase Interface
-	virtual void InitGame(const FString& MapName, const FString& Options, FString& ErrorMessage) override;
-	virtual void StartPlay() override;
-	//~ End AGameModeBase Interface
+  //~ Begin AGameModeBase Interface
+  virtual void InitGame(const FString &MapName, const FString &Options,
+                        FString &ErrorMessage) override;
+  virtual void StartPlay() override;
+  //~ End AGameModeBase Interface
 
-	/** The amount of funds the player starts with at the beginning of a new game. */
-	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Economy", meta = (ClampMin = "0"))
-	int32 StartingFunds;
+  /** The amount of funds the player starts with at the beginning of a new game.
+   */
+  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Economy",
+            meta = (ClampMin = "0"))
+  int32 StartingFunds;
+
+  /** The class used to create the runtime environment (sun, sky, ground, etc.).
+   */
+  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Environment")
+  TSubclassOf<AZooEnvironmentSetup> EnvironmentSetupClass;
 
 private:
-	/** Applies the starting funds to the game state. */
-	void InitializeGameEconomy();
+  /** Applies the starting funds to the game state. */
+  void InitializeGameEconomy();
+
+  /** Spawns the environment setup actor. */
+  void SpawnEnvironment();
+
+  /** The spawned environment setup instance. */
+  TObjectPtr<AZooEnvironmentSetup> EnvironmentSetupInstance;
 };
