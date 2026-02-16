@@ -31,7 +31,6 @@ public:
 
 	//~ Begin AActor Interface
 	virtual void BeginPlay() override;
-	virtual void Tick(float DeltaTime) override;
 	//~ End AActor Interface
 
 	// -------------------------------------------------------------------
@@ -47,15 +46,6 @@ public:
 	UBlackboardData* AnimalBlackboard;
 
 private:
-	/** Pushes current need values from the NeedsComponent into blackboard keys. */
-	void UpdateBlackboardFromNeeds();
-
-	/** Interval (seconds) between blackboard updates. */
-	float BlackboardUpdateInterval;
-
-	/** Accumulator for the update timer. */
-	float BlackboardUpdateTimer;
-
 	/** Cached pointer to the possessed animal's needs component. */
 	UPROPERTY()
 	UAnimalNeedsComponent* CachedNeedsComponent;

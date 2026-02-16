@@ -10,19 +10,19 @@
 #include "Widgets/Text/STextBlock.h"
 #include "Subsystems/TimeSubsystem.h"
 #include "Subsystems/EconomySubsystem.h"
+#include "Subsystems/VisitorSubsystem.h"
+#include "Subsystems/ZooRatingSubsystem.h"
 #include "Interaction/InteractionComponent.h"
 #include "Core/ZooKeeperCharacter.h"
 #include "ZooKeeper.h"
 
 TSharedRef<SWidget> UZooHUDWidget::RebuildWidget()
 {
-	// DIAGNOSTIC: Return a raw Slate text to verify widget is reaching the screen.
-	// If this text appears, the issue is in WidgetTree construction.
-	// If it doesn't, the issue is in widget creation/viewport.
-	return SNew(STextBlock)
-		.Text(FText::FromString(TEXT("=== HUD TEST ===")))
-		.Font(FCoreStyle::GetDefaultFontStyle("Bold", 36))
-		.ColorAndOpacity(FLinearColor::Yellow);
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		BuildWidgetTree();
+	}
+	return Super::RebuildWidget();
 }
 
 void UZooHUDWidget::BuildWidgetTree()
@@ -56,18 +56,40 @@ void UZooHUDWidget::BuildWidgetTree()
 	UVerticalBoxSlot* DayTextSlot = TimeBox->AddChildToVerticalBox(DayText);
 	DayTextSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Left);
 
-	// -- Top-right: Funds text --
+	// -- Top-right: Funds + Rating + Visitors vertical box --
+	UVerticalBox* InfoBox = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("InfoBox"));
+	UCanvasPanelSlot* InfoBoxSlot = RootCanvas->AddChildToCanvas(InfoBox);
+	InfoBoxSlot->SetAnchors(FAnchors(1.0f, 0.0f));
+	InfoBoxSlot->SetAlignment(FVector2D(1.0f, 0.0f));
+	InfoBoxSlot->SetPosition(FVector2D(-20.0f, 20.0f));
+	InfoBoxSlot->SetAutoSize(true);
+
 	FundsText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("FundsText"));
 	FundsText->SetText(FText::FromString(TEXT("$0")));
 	FSlateFontInfo FundsFont = FundsText->GetFont();
 	FundsFont.Size = 22;
 	FundsText->SetFont(FundsFont);
 	FundsText->SetColorAndOpacity(FSlateColor(FLinearColor(0.2f, 0.9f, 0.2f)));
-	UCanvasPanelSlot* FundsSlot = RootCanvas->AddChildToCanvas(FundsText);
-	FundsSlot->SetAnchors(FAnchors(1.0f, 0.0f));
-	FundsSlot->SetAlignment(FVector2D(1.0f, 0.0f));
-	FundsSlot->SetPosition(FVector2D(-20.0f, 20.0f));
-	FundsSlot->SetAutoSize(true);
+	UVerticalBoxSlot* FundsVSlot = InfoBox->AddChildToVerticalBox(FundsText);
+	FundsVSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Right);
+
+	RatingText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("RatingText"));
+	RatingText->SetText(FText::FromString(TEXT("0.0 / 5.0")));
+	FSlateFontInfo RatingFont = RatingText->GetFont();
+	RatingFont.Size = 16;
+	RatingText->SetFont(RatingFont);
+	RatingText->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 0.85f, 0.0f)));
+	UVerticalBoxSlot* RatingVSlot = InfoBox->AddChildToVerticalBox(RatingText);
+	RatingVSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Right);
+
+	VisitorCountText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("VisitorCountText"));
+	VisitorCountText->SetText(FText::FromString(TEXT("Visitors: 0")));
+	FSlateFontInfo VisitorFont = VisitorCountText->GetFont();
+	VisitorFont.Size = 14;
+	VisitorCountText->SetFont(VisitorFont);
+	VisitorCountText->SetColorAndOpacity(FSlateColor(FLinearColor(0.7f, 0.85f, 1.0f)));
+	UVerticalBoxSlot* VisitorVSlot = InfoBox->AddChildToVerticalBox(VisitorCountText);
+	VisitorVSlot->SetHorizontalAlignment(EHorizontalAlignment::HAlign_Right);
 
 	// -- Center: Crosshair (4x4 white dot) --
 	CrosshairImage = WidgetTree->ConstructWidget<UImage>(UImage::StaticClass(), TEXT("CrosshairImage"));
@@ -78,6 +100,19 @@ void UZooHUDWidget::BuildWidgetTree()
 	CrosshairSlot->SetAlignment(FVector2D(0.5f, 0.5f));
 	CrosshairSlot->SetPosition(FVector2D(0.0f, 0.0f));
 	CrosshairSlot->SetSize(FVector2D(4.0f, 4.0f));
+
+	// -- Bottom-left: Tool display --
+	ToolText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("ToolText"));
+	ToolText->SetText(FText::FromString(TEXT("Tool: Hand")));
+	FSlateFontInfo ToolFont = ToolText->GetFont();
+	ToolFont.Size = 14;
+	ToolText->SetFont(ToolFont);
+	ToolText->SetColorAndOpacity(FSlateColor(FLinearColor(0.8f, 0.9f, 1.0f)));
+	UCanvasPanelSlot* ToolSlot = RootCanvas->AddChildToCanvas(ToolText);
+	ToolSlot->SetAnchors(FAnchors(0.0f, 1.0f));
+	ToolSlot->SetAlignment(FVector2D(0.0f, 1.0f));
+	ToolSlot->SetPosition(FVector2D(20.0f, -20.0f));
+	ToolSlot->SetAutoSize(true);
 
 	// -- Bottom-center (75%): Interaction prompt --
 	InteractionPromptText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("InteractionPromptText"));
@@ -134,6 +169,20 @@ void UZooHUDWidget::NativeConstruct()
 	else
 	{
 		UE_LOG(LogZooKeeper, Warning, TEXT("ZooHUDWidget: EconomySubsystem not found."));
+	}
+
+	// --- Bind to VisitorSubsystem ---
+	if (UVisitorSubsystem* VisitorSub = World->GetSubsystem<UVisitorSubsystem>())
+	{
+		VisitorSub->OnVisitorCountChanged.AddDynamic(this, &UZooHUDWidget::HandleVisitorCountChanged);
+		HandleVisitorCountChanged(VisitorSub->CurrentVisitorCount);
+	}
+
+	// --- Bind to ZooRatingSubsystem ---
+	if (UZooRatingSubsystem* RatingSub = World->GetSubsystem<UZooRatingSubsystem>())
+	{
+		RatingSub->OnRatingChanged.AddDynamic(this, &UZooHUDWidget::HandleRatingChanged);
+		HandleRatingChanged(RatingSub->GetRating());
 	}
 
 	HideInteractionPrompt();
@@ -233,4 +282,20 @@ void UZooHUDWidget::HandleDayChanged(int32 NewDay)
 void UZooHUDWidget::HandleFundsChanged(int32 NewBalance)
 {
 	UpdateFundsDisplay(NewBalance);
+}
+
+void UZooHUDWidget::HandleVisitorCountChanged(int32 NewCount)
+{
+	if (VisitorCountText)
+	{
+		VisitorCountText->SetText(FText::FromString(FString::Printf(TEXT("Visitors: %d"), NewCount)));
+	}
+}
+
+void UZooHUDWidget::HandleRatingChanged(float NewRating)
+{
+	if (RatingText)
+	{
+		RatingText->SetText(FText::FromString(FString::Printf(TEXT("%.1f / 5.0"), NewRating)));
+	}
 }

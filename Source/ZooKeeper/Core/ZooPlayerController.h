@@ -50,6 +50,10 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
 	TObjectPtr<UInputMappingContext> DefaultMappingContext;
 
+	/** Input mapping context active during build mode (Place, Cancel, Rotate, Demolish). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
+	TObjectPtr<UInputMappingContext> BuildModeMappingContext;
+
 	/** Input action for movement (2D axis). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
 	TObjectPtr<UInputAction> IA_Move;
@@ -74,15 +78,44 @@ protected:
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
 	TObjectPtr<UInputAction> IA_ToggleBuildMode;
 
+	/** Input action for pausing the game (Escape). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
+	TObjectPtr<UInputAction> IA_Pause;
+
+	/** Input action for opening the management screen (Tab). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
+	TObjectPtr<UInputAction> IA_Management;
+
 	/** Priority for the default mapping context. Higher values take precedence. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input", meta = (ClampMin = "0"))
 	int32 DefaultMappingPriority;
+
+	/** Priority for the build mode mapping context. Should be higher than default. */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input", meta = (ClampMin = "0"))
+	int32 BuildModeMappingPriority;
+
+	/** Quick save (F5). */
+	UFUNCTION(BlueprintCallable, Category = "Zoo|SaveLoad")
+	void QuickSave();
+
+	/** Quick load (F9). */
+	UFUNCTION(BlueprintCallable, Category = "Zoo|SaveLoad")
+	void QuickLoad();
 
 private:
 	/** Handles the ToggleBuildMode input action. */
 	void HandleToggleBuildMode();
 
+	/** Handles the Pause input action. */
+	void HandlePause();
+
+	/** Handles the Management screen input action. */
+	void HandleManagement();
+
 	/** Whether the player is currently in build mode. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Zoo|BuildMode", meta = (AllowPrivateAccess = "true"))
 	bool bIsInBuildMode;
+
+	/** Whether the pause menu is currently shown. */
+	bool bIsPauseMenuOpen;
 };

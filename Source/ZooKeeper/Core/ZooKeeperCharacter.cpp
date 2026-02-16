@@ -7,10 +7,11 @@
 #include "EnhancedInputComponent.h"
 #include "InputActionValue.h"
 #include "Interaction/InteractionComponent.h"
+#include "Player/ToolComponent.h"
 
 AZooKeeperCharacter::AZooKeeperCharacter()
 	: WalkSpeed(400.0f)
-	, SprintSpeed(700.0f)
+	, SprintSpeed(800.0f)
 	, bIsSprinting(false)
 {
 	// ---------------------------------------------------------------
@@ -30,6 +31,11 @@ AZooKeeperCharacter::AZooKeeperCharacter()
 	//  Interaction Component
 	// ---------------------------------------------------------------
 	InteractionComp = CreateDefaultSubobject<UInteractionComponent>(TEXT("InteractionComp"));
+
+	// ---------------------------------------------------------------
+	//  Tool Component
+	// ---------------------------------------------------------------
+	ToolComp = CreateDefaultSubobject<UToolComponent>(TEXT("ToolComp"));
 
 	// ---------------------------------------------------------------
 	//  Movement Defaults
@@ -103,6 +109,30 @@ void AZooKeeperCharacter::SetupPlayerInputComponent(UInputComponent* PlayerInput
 		EnhancedInput->BindAction(IA_Sprint, ETriggerEvent::Completed, this, &AZooKeeperCharacter::HandleSprintStop);
 	}
 
+	// Tool scroll (mouse wheel)
+	if (IA_ToolScroll)
+	{
+		EnhancedInput->BindAction(IA_ToolScroll, ETriggerEvent::Triggered, this, &AZooKeeperCharacter::HandleToolScroll);
+	}
+
+	// Tool selection by number key
+	if (IA_Tool1)
+	{
+		EnhancedInput->BindAction(IA_Tool1, ETriggerEvent::Started, this, &AZooKeeperCharacter::HandleSelectTool1);
+	}
+	if (IA_Tool2)
+	{
+		EnhancedInput->BindAction(IA_Tool2, ETriggerEvent::Started, this, &AZooKeeperCharacter::HandleSelectTool2);
+	}
+	if (IA_Tool3)
+	{
+		EnhancedInput->BindAction(IA_Tool3, ETriggerEvent::Started, this, &AZooKeeperCharacter::HandleSelectTool3);
+	}
+	if (IA_Tool4)
+	{
+		EnhancedInput->BindAction(IA_Tool4, ETriggerEvent::Started, this, &AZooKeeperCharacter::HandleSelectTool4);
+	}
+
 	UE_LOG(LogZooKeeper, Log, TEXT("ZooKeeperCharacter::SetupPlayerInputComponent - Enhanced Input actions bound to character."));
 }
 
@@ -167,4 +197,46 @@ void AZooKeeperCharacter::UpdateMovementSpeed()
 	{
 		MoveComp->MaxWalkSpeed = bIsSprinting ? SprintSpeed : WalkSpeed;
 	}
+}
+
+// ---------------------------------------------------------------------------
+//  Tool Input Handlers
+// ---------------------------------------------------------------------------
+
+void AZooKeeperCharacter::HandleToolScroll(const FInputActionValue& Value)
+{
+	if (!ToolComp)
+	{
+		return;
+	}
+
+	const float ScrollValue = Value.Get<float>();
+	if (ScrollValue > 0.0f)
+	{
+		ToolComp->CycleToolForward();
+	}
+	else if (ScrollValue < 0.0f)
+	{
+		ToolComp->CycleToolBackward();
+	}
+}
+
+void AZooKeeperCharacter::HandleSelectTool1()
+{
+	if (ToolComp) { ToolComp->SetToolByIndex(0); }
+}
+
+void AZooKeeperCharacter::HandleSelectTool2()
+{
+	if (ToolComp) { ToolComp->SetToolByIndex(1); }
+}
+
+void AZooKeeperCharacter::HandleSelectTool3()
+{
+	if (ToolComp) { ToolComp->SetToolByIndex(2); }
+}
+
+void AZooKeeperCharacter::HandleSelectTool4()
+{
+	if (ToolComp) { ToolComp->SetToolByIndex(3); }
 }

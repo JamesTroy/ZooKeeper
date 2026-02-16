@@ -1,5 +1,6 @@
 #include "VisitorCharacter.h"
 #include "Subsystems/VisitorSubsystem.h"
+#include "Subsystems/EconomySubsystem.h"
 #include "ZooKeeper.h"
 
 AVisitorCharacter::AVisitorCharacter()
@@ -7,7 +8,8 @@ AVisitorCharacter::AVisitorCharacter()
 	PrimaryActorTick.bCanEverTick = true;
 
 	Satisfaction = 0.5f;
-	MoneyToSpend = 100.0f;
+	MoneyToSpend = FMath::RandRange(50, 150);
+	AdmissionFee = 10;
 	TimeInZoo = 0.0f;
 	MaxTimeInZoo = FMath::RandRange(300.0f, 600.0f);
 	CurrentState = EVisitorState::Entering;
@@ -25,6 +27,16 @@ void AVisitorCharacter::BeginPlay()
 		{
 			VisitorSubsystem->RegisterVisitor(this);
 			UE_LOG(LogZooKeeper, Log, TEXT("VisitorCharacter [%s] registered with VisitorSubsystem."), *GetName());
+		}
+
+		// Pay admission fee to the economy.
+		if (AdmissionFee > 0)
+		{
+			if (UEconomySubsystem* EconSys = World->GetSubsystem<UEconomySubsystem>())
+			{
+				EconSys->AddIncome(AdmissionFee, TEXT("Visitor admission"));
+			}
+			SpendMoney(AdmissionFee);
 		}
 	}
 }
@@ -71,24 +83,24 @@ void AVisitorCharacter::UpdateSatisfaction(float Delta)
 	}
 }
 
-bool AVisitorCharacter::SpendMoney(float Amount)
+bool AVisitorCharacter::SpendMoney(int32 Amount)
 {
-	if (Amount <= 0.0f)
+	if (Amount <= 0)
 	{
-		UE_LOG(LogZooKeeper, Warning, TEXT("Visitor [%s] SpendMoney called with non-positive amount: %.2f"),
+		UE_LOG(LogZooKeeper, Warning, TEXT("Visitor [%s] SpendMoney called with non-positive amount: %d"),
 			*GetName(), Amount);
 		return false;
 	}
 
 	if (MoneyToSpend < Amount)
 	{
-		UE_LOG(LogZooKeeper, Verbose, TEXT("Visitor [%s] cannot afford %.2f (has %.2f)."),
+		UE_LOG(LogZooKeeper, Verbose, TEXT("Visitor [%s] cannot afford %d (has %d)."),
 			*GetName(), Amount, MoneyToSpend);
 		return false;
 	}
 
 	MoneyToSpend -= Amount;
-	UE_LOG(LogZooKeeper, Verbose, TEXT("Visitor [%s] spent %.2f, remaining: %.2f"),
+	UE_LOG(LogZooKeeper, Verbose, TEXT("Visitor [%s] spent %d, remaining: %d"),
 		*GetName(), Amount, MoneyToSpend);
 	return true;
 }
@@ -107,7 +119,7 @@ bool AVisitorCharacter::ShouldLeave() const
 	}
 
 	// Leave if out of money and satisfaction is very low
-	if (MoneyToSpend <= 0.0f && Satisfaction < 0.2f)
+	if (MoneyToSpend <= 0 && Satisfaction < 0.2f)
 	{
 		return true;
 	}

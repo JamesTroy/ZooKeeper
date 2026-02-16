@@ -1,4 +1,7 @@
 #include "VisitorSubsystem.h"
+#include "ZooRatingSubsystem.h"
+#include "Visitors/VisitorCharacter.h"
+#include "Kismet/GameplayStatics.h"
 #include "ZooKeeper.h"
 
 bool UVisitorSubsystem::ShouldCreateSubsystem(UObject* Outer) const
@@ -13,6 +16,13 @@ void UVisitorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	MaxVisitors = 50;
 	CurrentVisitorCount = 0;
 	AverageSatisfaction = 50.0f;
+
+	// Find all actors tagged as visitor spawn points.
+	if (UWorld* World = GetWorld())
+	{
+		UGameplayStatics::GetAllActorsWithTag(World, FName(TEXT("VisitorSpawn")), SpawnPoints);
+		UE_LOG(LogZooKeeper, Log, TEXT("VisitorSubsystem::Initialize - Found %d visitor spawn points."), SpawnPoints.Num());
+	}
 
 	UE_LOG(LogZooKeeper, Log, TEXT("VisitorSubsystem::Initialize - MaxVisitors: %d"), MaxVisitors);
 }
@@ -82,40 +92,89 @@ void UVisitorSubsystem::SpawnVisitors(int32 Count)
 		return;
 	}
 
-	const int32 OldCount = CurrentVisitorCount;
-	CurrentVisitorCount += ActualSpawn;
+	UWorld* World = GetWorld();
+	if (!World || !VisitorCharacterClass)
+	{
+		// Fallback: just increment counter if no class assigned.
+		CurrentVisitorCount += ActualSpawn;
+		OnVisitorCountChanged.Broadcast(CurrentVisitorCount);
+		UE_LOG(LogZooKeeper, Warning, TEXT("VisitorSubsystem::SpawnVisitors - No VisitorCharacterClass set, incrementing counter only."));
+		return;
+	}
 
-	OnVisitorCountChanged.Broadcast(CurrentVisitorCount);
+	int32 Spawned = 0;
+	for (int32 i = 0; i < ActualSpawn; ++i)
+	{
+		FVector SpawnLocation = FVector::ZeroVector;
+		FRotator SpawnRotation = FRotator::ZeroRotator;
 
-	UE_LOG(LogZooKeeper, Log, TEXT("VisitorSubsystem - Spawned %d visitors (%d -> %d)."),
-		ActualSpawn, OldCount, CurrentVisitorCount);
+		// Pick a random spawn point if available.
+		if (SpawnPoints.Num() > 0)
+		{
+			AActor* SpawnPoint = SpawnPoints[FMath::RandRange(0, SpawnPoints.Num() - 1)];
+			if (SpawnPoint)
+			{
+				SpawnLocation = SpawnPoint->GetActorLocation();
+				SpawnRotation = SpawnPoint->GetActorRotation();
+			}
+		}
+
+		FActorSpawnParameters SpawnParams;
+		SpawnParams.SpawnCollisionHandlingOverride = ESpawnActorCollisionHandlingMethod::AdjustIfPossibleButAlwaysSpawn;
+
+		AVisitorCharacter* NewVisitor = World->SpawnActor<AVisitorCharacter>(
+			VisitorCharacterClass, SpawnLocation, SpawnRotation, SpawnParams);
+
+		if (NewVisitor)
+		{
+			Spawned++;
+		}
+	}
+
+	UE_LOG(LogZooKeeper, Log, TEXT("VisitorSubsystem - Spawned %d/%d visitor actors. Total: %d"),
+		Spawned, ActualSpawn, CurrentVisitorCount);
 }
 
 void UVisitorSubsystem::DespawnAllVisitors()
 {
-	if (CurrentVisitorCount == 0)
+	if (AllVisitorCharacters.Num() == 0 && CurrentVisitorCount == 0)
 	{
 		return;
 	}
 
-	UE_LOG(LogZooKeeper, Log, TEXT("VisitorSubsystem - Despawning all %d visitors."), CurrentVisitorCount);
+	UE_LOG(LogZooKeeper, Log, TEXT("VisitorSubsystem - Despawning all %d visitors."), AllVisitorCharacters.Num());
 
+	// Destroy all visitor actors. Copy the array since Destroy triggers EndPlay -> UnregisterVisitor.
+	TArray<TObjectPtr<AVisitorCharacter>> VisitorsCopy = AllVisitorCharacters;
+	for (AVisitorCharacter* Visitor : VisitorsCopy)
+	{
+		if (Visitor)
+		{
+			Visitor->Destroy();
+		}
+	}
+
+	AllVisitorCharacters.Empty();
 	CurrentVisitorCount = 0;
 	OnVisitorCountChanged.Broadcast(CurrentVisitorCount);
 }
 
 int32 UVisitorSubsystem::CalculateVisitorAttraction() const
 {
-	// Base attraction is influenced by:
-	// - Number of different animal species
-	// - Average visitor satisfaction
-	// - Zoo reputation (would query game state)
-	// For now, use a simple formula based on satisfaction.
-
 	const float SatisfactionFactor = AverageSatisfaction / 100.0f; // 0-1
 	const int32 BaseAttraction = 10;
-	const int32 AttractionScore = FMath::FloorToInt(BaseAttraction * SatisfactionFactor);
 
+	// Use zoo rating to boost attraction if ZooRatingSubsystem is available
+	float RatingMultiplier = 1.0f;
+	if (const UWorld* World = GetWorld())
+	{
+		if (const UZooRatingSubsystem* RatingSub = World->GetSubsystem<UZooRatingSubsystem>())
+		{
+			RatingMultiplier = RatingSub->GetVisitorSpawnMultiplier();
+		}
+	}
+
+	const int32 AttractionScore = FMath::FloorToInt(BaseAttraction * SatisfactionFactor * RatingMultiplier);
 	return FMath::Max(1, AttractionScore);
 }
 

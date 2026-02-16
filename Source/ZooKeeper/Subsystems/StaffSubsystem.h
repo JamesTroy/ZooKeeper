@@ -5,6 +5,7 @@
 #include "StaffSubsystem.generated.h"
 
 class AEnclosureActor;
+class AStaffCharacter;
 
 /**
  * EStaffType
@@ -14,10 +15,11 @@ class AEnclosureActor;
 UENUM(BlueprintType)
 enum class EStaffType : uint8
 {
-	Keeper        UMETA(DisplayName = "Keeper"),
+	Zookeeper     UMETA(DisplayName = "Zookeeper"),
 	Veterinarian  UMETA(DisplayName = "Veterinarian"),
 	Janitor       UMETA(DisplayName = "Janitor"),
-	Mechanic      UMETA(DisplayName = "Mechanic")
+	Mechanic      UMETA(DisplayName = "Mechanic"),
+	Guide         UMETA(DisplayName = "Guide")
 };
 
 /**
@@ -40,7 +42,7 @@ struct ZOOKEEPER_API FStaffRecord
 
 	/** The role this staff member performs. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Staff")
-	EStaffType Type = EStaffType::Keeper;
+	EStaffType Type = EStaffType::Zookeeper;
 
 	/** Daily salary cost. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Staff", meta = (ClampMin = "0"))
@@ -52,7 +54,7 @@ struct ZOOKEEPER_API FStaffRecord
 
 	/** The enclosure this staff member is assigned to (may be nullptr). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Staff")
-	TObjectPtr<AActor> AssignedEnclosure = nullptr;
+	TObjectPtr<AEnclosureActor> AssignedEnclosure = nullptr;
 };
 
 /** Broadcast when a new staff member is hired. */
@@ -108,6 +110,16 @@ public:
 	void AssignToEnclosure(int32 StaffID, AEnclosureActor* Enclosure);
 
 	// -------------------------------------------------------------------
+	//  Character Registration
+	// -------------------------------------------------------------------
+
+	/** Registers a staff character with this subsystem. Called from StaffCharacter::BeginPlay(). */
+	void RegisterStaff(AStaffCharacter* StaffCharacter);
+
+	/** Unregisters a staff character. Called from StaffCharacter::EndPlay(). */
+	void UnregisterStaff(AStaffCharacter* StaffCharacter);
+
+	// -------------------------------------------------------------------
 	//  Queries
 	// -------------------------------------------------------------------
 
@@ -118,6 +130,14 @@ public:
 	/** Returns the total daily salary cost across all staff members. */
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Zoo|Staff")
 	int32 GetDailySalaryCost() const;
+
+	/** Returns a copy of all staff records for UI display. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Zoo|Staff")
+	TArray<FStaffRecord> GetAllStaffRecords() const { return StaffRecords; }
+
+	/** Returns the staff record for the given ID, or a default if not found. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Zoo|Staff")
+	FStaffRecord GetStaffRecord(int32 StaffID) const;
 
 	// -------------------------------------------------------------------
 	//  Delegates

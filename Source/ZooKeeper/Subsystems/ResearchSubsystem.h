@@ -2,6 +2,7 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "Engine/DataTable.h"
 #include "ResearchSubsystem.generated.h"
 
 /** Broadcast when a research project completes. */
@@ -82,6 +83,10 @@ public:
 	UPROPERTY(BlueprintAssignable, Category = "Zoo|Research")
 	FOnResearchStarted OnResearchStarted;
 
+	/** The DataTable of FResearchNodeData rows. Assign in editor or load at runtime. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Research")
+	TObjectPtr<UDataTable> ResearchDataTable;
+
 private:
 	/** Set of all completed research IDs. */
 	TSet<FName> CompletedResearch;
@@ -92,15 +97,15 @@ private:
 	/** Progress toward completing the current research (0 to ResearchDuration). */
 	float CurrentResearchProgress;
 
-	/** Duration in game seconds required to complete a research project. */
+	/** Duration in game seconds required to complete the current research project. */
 	float ResearchDuration;
 
 	/** Whether research is currently active. */
 	bool bIsResearching;
 
-	/**
-	 * Master list of all possible research topics in the game.
-	 * In a production scenario this would be data-driven from a DataTable.
-	 */
+	/** Cached list of all research IDs loaded from DataTable. */
 	TArray<FName> AllResearchTopics;
+
+	/** Loads all research topics from the DataTable (or falls back to hardcoded list). */
+	void LoadResearchFromDataTable();
 };

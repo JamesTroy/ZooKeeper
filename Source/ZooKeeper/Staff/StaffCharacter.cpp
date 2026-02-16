@@ -1,5 +1,10 @@
 #include "StaffCharacter.h"
 #include "Subsystems/StaffSubsystem.h"
+#include "Buildings/EnclosureActor.h"
+#include "Buildings/FeederActor.h"
+#include "Animals/AnimalBase.h"
+#include "Animals/AnimalNeedsComponent.h"
+#include "Kismet/GameplayStatics.h"
 #include "ZooKeeper.h"
 
 AStaffCharacter::AStaffCharacter()
@@ -75,34 +80,91 @@ void AStaffCharacter::PerformDuty()
 	switch (StaffType)
 	{
 	case EStaffType::Zookeeper:
-		UE_LOG(LogZooKeeper, Log, TEXT("Zookeeper [%s] feeding animals in [%s] (efficiency: %.2f)."),
-			*StaffName, *AssignedEnclosure->GetName(), Efficiency);
-		// Feeding logic would be implemented here, interacting with AnimalNeedsComponent
+	{
+		// Find empty feeders in the enclosure and restock them.
+		TArray<AActor*> NearbyActors;
+		UGameplayStatics::GetAllActorsOfClass(GetWorld(), AFeederActor::StaticClass(), NearbyActors);
+
+		for (AActor* Actor : NearbyActors)
+		{
+			AFeederActor* Feeder = Cast<AFeederActor>(Actor);
+			if (Feeder && Feeder->IsEmpty())
+			{
+				const float Dist = FVector::Dist(Feeder->GetActorLocation(), AssignedEnclosure->GetActorLocation());
+				if (Dist < 3000.0f) // Within reasonable range of enclosure
+				{
+					Feeder->Restock(FMath::RoundToInt(Feeder->MaxCapacity * Efficiency));
+					UE_LOG(LogZooKeeper, Log, TEXT("Zookeeper [%s] restocked feeder near [%s]."),
+						*StaffName, *AssignedEnclosure->GetName());
+					return;
+				}
+			}
+		}
+
+		UE_LOG(LogZooKeeper, Verbose, TEXT("Zookeeper [%s] found no empty feeders near [%s]."),
+			*StaffName, *AssignedEnclosure->GetName());
 		break;
+	}
 
 	case EStaffType::Veterinarian:
-		UE_LOG(LogZooKeeper, Log, TEXT("Veterinarian [%s] treating animals in [%s] (efficiency: %.2f)."),
-			*StaffName, *AssignedEnclosure->GetName(), Efficiency);
-		// Treatment logic would be implemented here
+	{
+		// Find sick animals (Health < 0.5) in the enclosure and heal them.
+		for (AAnimalBase* Animal : AssignedEnclosure->ContainedAnimals)
+		{
+			if (!Animal || !Animal->NeedsComponent)
+			{
+				continue;
+			}
+
+			const float Health = Animal->NeedsComponent->GetNeedValue(FName("Health"));
+			if (Health < 0.5f)
+			{
+				const float HealAmount = 0.3f * Efficiency;
+				Animal->NeedsComponent->ModifyNeed(FName("Health"), HealAmount);
+				UE_LOG(LogZooKeeper, Log, TEXT("Veterinarian [%s] treated animal [%s] in [%s] (healed %.2f)."),
+					*StaffName, *Animal->AnimalName, *AssignedEnclosure->GetName(), HealAmount);
+				return;
+			}
+		}
+
+		UE_LOG(LogZooKeeper, Verbose, TEXT("Veterinarian [%s] found no sick animals in [%s]."),
+			*StaffName, *AssignedEnclosure->GetName());
 		break;
+	}
 
 	case EStaffType::Mechanic:
-		UE_LOG(LogZooKeeper, Log, TEXT("Mechanic [%s] repairing structures in [%s] (efficiency: %.2f)."),
-			*StaffName, *AssignedEnclosure->GetName(), Efficiency);
-		// Repair logic would be implemented here
+	{
+		// Repair damaged enclosure (Condition < 0.5).
+		if (AssignedEnclosure->Condition < 0.5f)
+		{
+			const float RepairAmount = 0.2f * Efficiency;
+			AssignedEnclosure->Condition = FMath::Clamp(AssignedEnclosure->Condition + RepairAmount, 0.0f, 1.0f);
+			UE_LOG(LogZooKeeper, Log, TEXT("Mechanic [%s] repaired [%s] (condition now: %.2f)."),
+				*StaffName, *AssignedEnclosure->GetName(), AssignedEnclosure->Condition);
+			return;
+		}
+
+		UE_LOG(LogZooKeeper, Verbose, TEXT("Mechanic [%s] found no damaged structures in [%s]."),
+			*StaffName, *AssignedEnclosure->GetName());
 		break;
+	}
 
 	case EStaffType::Janitor:
-		UE_LOG(LogZooKeeper, Log, TEXT("Janitor [%s] cleaning area around [%s] (efficiency: %.2f)."),
+	{
+		// Janitors boost visitor satisfaction by keeping the area clean.
+		// For now, just log the action — cleanliness system can be added later.
+		UE_LOG(LogZooKeeper, Log, TEXT("Janitor [%s] cleaned area around [%s] (efficiency: %.2f)."),
 			*StaffName, *AssignedEnclosure->GetName(), Efficiency);
-		// Cleaning logic would be implemented here
 		break;
+	}
 
 	case EStaffType::Guide:
+	{
+		// Guides boost visitor satisfaction by providing tours.
 		UE_LOG(LogZooKeeper, Log, TEXT("Guide [%s] assisting visitors near [%s] (efficiency: %.2f)."),
 			*StaffName, *AssignedEnclosure->GetName(), Efficiency);
-		// Guide logic would be implemented here
 		break;
+	}
 
 	default:
 		UE_LOG(LogZooKeeper, Warning, TEXT("Staff [%s] has unknown staff type."), *StaffName);

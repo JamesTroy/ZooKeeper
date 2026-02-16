@@ -103,10 +103,21 @@ public:
 	float WeatherChangePeriod;
 
 private:
+	/** Called when the season changes — triggers a weather change. */
+	UFUNCTION()
+	void HandleSeasonChanged(int32 NewSeason);
+
+	/** Called each in-game hour to potentially change weather. */
+	UFUNCTION()
+	void HandleHourChanged(int32 NewHour);
+
 	/**
 	 * Selects a new random weather state weighted by the current season.
 	 * @param Season  The current season index (0-3: Spring/Summer/Autumn/Winter).
 	 * @return The new weather state.
 	 */
 	EWeatherState PickRandomWeather(int32 Season) const;
+
+	/** Cached season for weather selection. */
+	int32 CachedSeason;
 };

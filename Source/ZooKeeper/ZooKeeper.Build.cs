@@ -19,7 +19,8 @@ public class ZooKeeper : ModuleRules
 			"AIModule",
 			"GameplayTasks",
 			"NavigationSystem",
-			"Niagara"
+			"Niagara",
+			"GameplayTags"
 		});
 
 		PrivateDependencyModuleNames.AddRange(new string[]

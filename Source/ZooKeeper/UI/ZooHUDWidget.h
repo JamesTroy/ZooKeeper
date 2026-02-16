@@ -8,6 +8,8 @@ class UTextBlock;
 class UImage;
 class UTimeSubsystem;
 class UEconomySubsystem;
+class UVisitorSubsystem;
+class UZooRatingSubsystem;
 class UInteractionComponent;
 
 /**
@@ -74,6 +76,14 @@ private:
 	UFUNCTION()
 	void HandleFundsChanged(int32 NewBalance);
 
+	/** Callback bound to UVisitorSubsystem::OnVisitorCountChanged. */
+	UFUNCTION()
+	void HandleVisitorCountChanged(int32 NewCount);
+
+	/** Callback bound to UZooRatingSubsystem::OnRatingChanged. */
+	UFUNCTION()
+	void HandleRatingChanged(float NewRating);
+
 	// -------------------------------------------------------------------
 	//  Widget references (built programmatically)
 	// -------------------------------------------------------------------
@@ -86,6 +96,15 @@ private:
 
 	UPROPERTY()
 	TObjectPtr<UTextBlock> FundsText;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> VisitorCountText;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> RatingText;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> ToolText;
 
 	UPROPERTY()
 	TObjectPtr<UTextBlock> InteractionPromptText;

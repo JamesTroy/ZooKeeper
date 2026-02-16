@@ -58,7 +58,7 @@ public:
 	 * @return true if the visitor had enough money and the purchase succeeded.
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Zoo|Visitor")
-	bool SpendMoney(float Amount);
+	bool SpendMoney(int32 Amount);
 
 	// -------------------------------------------------------------------
 	//  Queries
@@ -81,8 +81,12 @@ public:
 	float Satisfaction;
 
 	/** Amount of money the visitor is willing to spend. */
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Visitor", meta = (ClampMin = "0.0"))
-	float MoneyToSpend;
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Visitor", meta = (ClampMin = "0"))
+	int32 MoneyToSpend;
+
+	/** Admission fee paid on entry. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Visitor", meta = (ClampMin = "0"))
+	int32 AdmissionFee;
 
 	/** Elapsed time (in seconds) this visitor has been in the zoo. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoo|Visitor")

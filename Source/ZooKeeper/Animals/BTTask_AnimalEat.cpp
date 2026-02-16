@@ -1,8 +1,11 @@
 #include "BTTask_AnimalEat.h"
 #include "AnimalBase.h"
 #include "AnimalNeedsComponent.h"
+#include "Buildings/EnclosureActor.h"
+#include "Buildings/FeederActor.h"
 #include "ZooKeeper.h"
 #include "AIController.h"
+#include "Kismet/GameplayStatics.h"
 
 UBTTask_AnimalEat::UBTTask_AnimalEat()
 {
@@ -28,12 +31,57 @@ EBTNodeResult::Type UBTTask_AnimalEat::ExecuteTask(UBehaviorTreeComponent& Owner
 		return EBTNodeResult::Failed;
 	}
 
-	// Feed the animal immediately; the task duration simulates the eating animation.
-	Animal->NeedsComponent->FeedAnimal(FeedAmount);
+	// Try to find a feeder in the animal's enclosure.
+	AEnclosureActor* Enclosure = Cast<AEnclosureActor>(Animal->CurrentEnclosure);
+	AFeederActor* Feeder = nullptr;
+
+	if (Enclosure)
+	{
+		// Search for a non-empty feeder tagged or within the enclosure area.
+		TArray<AActor*> Feeders;
+		UGameplayStatics::GetAllActorsOfClass(Animal->GetWorld(), AFeederActor::StaticClass(), Feeders);
+
+		float NearestDistSq = TNumericLimits<float>::Max();
+		const FVector EnclosureLoc = Enclosure->GetActorLocation();
+
+		for (AActor* Actor : Feeders)
+		{
+			AFeederActor* CandidateFeeder = Cast<AFeederActor>(Actor);
+			if (!CandidateFeeder || CandidateFeeder->IsEmpty())
+			{
+				continue;
+			}
+
+			const float DistSq = FVector::DistSquared(EnclosureLoc, CandidateFeeder->GetActorLocation());
+			if (DistSq < NearestDistSq)
+			{
+				NearestDistSq = DistSq;
+				Feeder = CandidateFeeder;
+			}
+		}
+	}
+
+	if (Feeder)
+	{
+		// Move to feeder and consume food from it.
+		AIController->MoveToActor(Feeder, 100.0f);
+
+		if (Feeder->ConsumeFood())
+		{
+			Animal->NeedsComponent->FeedAnimal(Feeder->HungerRestorePerUse);
+			UE_LOG(LogZooKeeper, Verbose, TEXT("BTTask_AnimalEat: '%s' ate from feeder [%s]."),
+			       *Animal->AnimalName, *Feeder->GetName());
+		}
+	}
+	else
+	{
+		// Fallback: no feeder available, feed a reduced amount directly (foraging).
+		Animal->NeedsComponent->FeedAnimal(FeedAmount * 0.5f);
+		UE_LOG(LogZooKeeper, Verbose, TEXT("BTTask_AnimalEat: '%s' foraged (no feeder available)."),
+		       *Animal->AnimalName);
+	}
+
 	ElapsedTime = 0.0f;
-
-	UE_LOG(LogZooKeeper, Verbose, TEXT("BTTask_AnimalEat: '%s' started eating."), *Animal->AnimalName);
-
 	return EBTNodeResult::InProgress;
 }
 

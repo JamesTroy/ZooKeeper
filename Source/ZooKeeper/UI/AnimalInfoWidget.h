@@ -45,12 +45,15 @@ public:
 protected:
 	//~ Begin UUserWidget Interface
 	virtual TSharedRef<SWidget> RebuildWidget() override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	//~ End UUserWidget Interface
 
 private:
 	void BuildWidgetTree();
 	UProgressBar* CreateNeedRow(class UVerticalBox* Parent, const FString& LabelStr, const FLinearColor& BarColor);
+
+	/** Callback for OnNeedChanged delegate from the animal's NeedsComponent. */
+	UFUNCTION()
+	void HandleNeedChanged(FName NeedName, float NewValue);
 
 	// -------------------------------------------------------------------
 	//  Widget references (built programmatically)

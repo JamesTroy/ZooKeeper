@@ -118,6 +118,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Visitors", meta = (ClampMin = "0"))
 	int32 MaxVisitors;
 
+	/** The visitor character class to spawn. Assign in editor. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Visitors")
+	TSubclassOf<AVisitorCharacter> VisitorCharacterClass;
+
+	/** Spawn points for visitors (actors tagged "VisitorSpawn" are found at init). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoo|Visitors")
+	TArray<TObjectPtr<AActor>> SpawnPoints;
+
 	/** Current number of visitors in the zoo. */
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoo|Visitors")
 	int32 CurrentVisitorCount;

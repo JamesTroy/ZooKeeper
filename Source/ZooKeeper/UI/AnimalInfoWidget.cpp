@@ -125,7 +125,22 @@ void UAnimalInfoWidget::SetAnimalData(AAnimalBase* Animal)
 		return;
 	}
 
+	// Unbind from previous animal's delegate if any.
+	if (CurrentAnimal.IsValid())
+	{
+		if (UAnimalNeedsComponent* OldNeeds = CurrentAnimal->NeedsComponent)
+		{
+			OldNeeds->OnNeedChanged.RemoveDynamic(this, &UAnimalInfoWidget::HandleNeedChanged);
+		}
+	}
+
 	CurrentAnimal = Animal;
+
+	// Bind to new animal's OnNeedChanged delegate for live updates.
+	if (UAnimalNeedsComponent* Needs = Animal->NeedsComponent)
+	{
+		Needs->OnNeedChanged.AddDynamic(this, &UAnimalInfoWidget::HandleNeedChanged);
+	}
 
 	if (AnimalNameText)
 	{
@@ -174,6 +189,15 @@ void UAnimalInfoWidget::UpdateNeedBars()
 
 void UAnimalInfoWidget::ClearAnimalData()
 {
+	// Unbind from the previous animal's delegate.
+	if (CurrentAnimal.IsValid())
+	{
+		if (UAnimalNeedsComponent* Needs = CurrentAnimal->NeedsComponent)
+		{
+			Needs->OnNeedChanged.RemoveDynamic(this, &UAnimalInfoWidget::HandleNeedChanged);
+		}
+	}
+
 	CurrentAnimal.Reset();
 
 	if (AnimalNameText) { AnimalNameText->SetText(FText::GetEmpty()); }
@@ -187,12 +211,18 @@ void UAnimalInfoWidget::ClearAnimalData()
 	if (SocialBar)      { SocialBar->SetPercent(0.0f); }
 }
 
-void UAnimalInfoWidget::NativeTick(const FGeometry& MyGeometry, float InDeltaTime)
+void UAnimalInfoWidget::HandleNeedChanged(FName NeedName, float NewValue)
 {
-	Super::NativeTick(MyGeometry, InDeltaTime);
-
-	if (CurrentAnimal.IsValid())
+	if (!CurrentAnimal.IsValid())
 	{
-		UpdateNeedBars();
+		return;
 	}
+
+	// Update the specific bar that changed rather than all bars.
+	if (NeedName == FName("Hunger") && HungerBar)       { HungerBar->SetPercent(NewValue); }
+	else if (NeedName == FName("Thirst") && ThirstBar)   { ThirstBar->SetPercent(NewValue); }
+	else if (NeedName == FName("Energy") && EnergyBar)   { EnergyBar->SetPercent(NewValue); }
+	else if (NeedName == FName("Health") && HealthBar)   { HealthBar->SetPercent(NewValue); }
+	else if (NeedName == FName("Happiness") && HappinessBar) { HappinessBar->SetPercent(NewValue); }
+	else if (NeedName == FName("Social") && SocialBar)   { SocialBar->SetPercent(NewValue); }
 }

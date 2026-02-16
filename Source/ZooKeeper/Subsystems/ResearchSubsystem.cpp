@@ -1,4 +1,5 @@
 #include "ResearchSubsystem.h"
+#include "Data/ZooDataTypes.h"
 #include "ZooKeeper.h"
 
 bool UResearchSubsystem::ShouldCreateSubsystem(UObject* Outer) const
@@ -12,25 +13,51 @@ void UResearchSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 
 	CurrentResearchID = NAME_None;
 	CurrentResearchProgress = 0.0f;
-	ResearchDuration = 300.0f; // 300 game seconds per research project
+	ResearchDuration = 300.0f;
 	bIsResearching = false;
 
-	// Populate the master list of research topics.
-	// In a production build these would come from a DataTable or config asset.
-	AllResearchTopics = {
-		FName(TEXT("BetterFeed")),
-		FName(TEXT("VeterinaryMedicine")),
-		FName(TEXT("EnrichedEnclosures")),
-		FName(TEXT("BreedingProgram")),
-		FName(TEXT("VisitorAmenities")),
-		FName(TEXT("ConservationEfforts")),
-		FName(TEXT("AdvancedHabitats")),
-		FName(TEXT("NighttimeExhibits")),
-		FName(TEXT("EducationalPrograms")),
-		FName(TEXT("SustainableEnergy"))
-	};
+	LoadResearchFromDataTable();
 
 	UE_LOG(LogZooKeeper, Log, TEXT("ResearchSubsystem::Initialize - %d research topics available."), AllResearchTopics.Num());
+}
+
+void UResearchSubsystem::LoadResearchFromDataTable()
+{
+	AllResearchTopics.Empty();
+
+	if (ResearchDataTable)
+	{
+		TArray<FResearchNodeData*> Rows;
+		ResearchDataTable->GetAllRows<FResearchNodeData>(TEXT("ResearchSubsystem"), Rows);
+
+		for (const FResearchNodeData* Row : Rows)
+		{
+			if (Row && !Row->ResearchID.IsNone())
+			{
+				AllResearchTopics.Add(Row->ResearchID);
+			}
+		}
+
+		UE_LOG(LogZooKeeper, Log, TEXT("ResearchSubsystem - Loaded %d topics from DataTable."), AllResearchTopics.Num());
+	}
+	else
+	{
+		// Fallback hardcoded list when no DataTable is assigned.
+		AllResearchTopics = {
+			FName(TEXT("BetterFeed")),
+			FName(TEXT("VeterinaryMedicine")),
+			FName(TEXT("EnrichedEnclosures")),
+			FName(TEXT("BreedingProgram")),
+			FName(TEXT("VisitorAmenities")),
+			FName(TEXT("ConservationEfforts")),
+			FName(TEXT("AdvancedHabitats")),
+			FName(TEXT("NighttimeExhibits")),
+			FName(TEXT("EducationalPrograms")),
+			FName(TEXT("SustainableEnergy"))
+		};
+
+		UE_LOG(LogZooKeeper, Warning, TEXT("ResearchSubsystem - No DataTable assigned, using %d hardcoded topics."), AllResearchTopics.Num());
+	}
 }
 
 void UResearchSubsystem::Deinitialize()
@@ -72,13 +99,25 @@ void UResearchSubsystem::StartResearch(FName ResearchID)
 		return;
 	}
 
+	// Look up duration from DataTable if available.
+	float Duration = ResearchDuration;
+	if (ResearchDataTable)
+	{
+		if (const FResearchNodeData* Row = ResearchDataTable->FindRow<FResearchNodeData>(ResearchID, TEXT("StartResearch")))
+		{
+			Duration = Row->ResearchDuration;
+		}
+	}
+
 	CurrentResearchID = ResearchID;
 	CurrentResearchProgress = 0.0f;
+	ResearchDuration = Duration;
 	bIsResearching = true;
 
 	OnResearchStarted.Broadcast(ResearchID);
 
-	UE_LOG(LogZooKeeper, Log, TEXT("ResearchSubsystem - Started researching '%s'."), *ResearchID.ToString());
+	UE_LOG(LogZooKeeper, Log, TEXT("ResearchSubsystem - Started researching '%s' (duration: %.0fs)."),
+		*ResearchID.ToString(), ResearchDuration);
 }
 
 void UResearchSubsystem::TickResearch(float DeltaTime)
@@ -134,7 +173,29 @@ TArray<FName> UResearchSubsystem::GetAvailableResearch() const
 
 	for (const FName& Topic : AllResearchTopics)
 	{
-		if (!CompletedResearch.Contains(Topic) && Topic != CurrentResearchID)
+		if (CompletedResearch.Contains(Topic) || Topic == CurrentResearchID)
+		{
+			continue;
+		}
+
+		// Check prerequisites from DataTable
+		bool bPrerequisitesMet = true;
+		if (ResearchDataTable)
+		{
+			if (const FResearchNodeData* Row = ResearchDataTable->FindRow<FResearchNodeData>(Topic, TEXT("GetAvailableResearch")))
+			{
+				for (const FName& Prereq : Row->Prerequisites)
+				{
+					if (!CompletedResearch.Contains(Prereq))
+					{
+						bPrerequisitesMet = false;
+						break;
+					}
+				}
+			}
+		}
+
+		if (bPrerequisitesMet)
 		{
 			Available.Add(Topic);
 		}

@@ -5,7 +5,8 @@
 #include "ZooKeeper/Subsystems/BuildingManagerSubsystem.h"
 
 AZooBuildingActor::AZooBuildingActor()
-	: Condition(1.0f)
+	: PurchaseCost(0)
+	, Condition(1.0f)
 	, MaintenanceCostPerDay(0.0f)
 	, bIsPlaced(false)
 {

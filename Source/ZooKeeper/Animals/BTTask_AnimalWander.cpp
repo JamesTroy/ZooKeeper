@@ -1,5 +1,6 @@
 #include "BTTask_AnimalWander.h"
 #include "AnimalBase.h"
+#include "Buildings/EnclosureActor.h"
 #include "ZooKeeper.h"
 #include "AIController.h"
 #include "NavigationSystem.h"
@@ -35,28 +36,34 @@ EBTNodeResult::Type UBTTask_AnimalWander::ExecuteTask(UBehaviorTreeComponent& Ow
 		return EBTNodeResult::Failed;
 	}
 
-	// Determine the wander origin. If the animal has an enclosure, use its location;
-	// otherwise use the animal's current position.
-	FVector Origin = Pawn->GetActorLocation();
-	float Radius = WanderRadius;
+	// Determine wander target. Prefer using the enclosure volume for bounded wandering.
+	FVector WanderTarget;
 
 	AAnimalBase* Animal = Cast<AAnimalBase>(Pawn);
-	if (Animal && Animal->CurrentEnclosure)
+	AEnclosureActor* Enclosure = Animal ? Cast<AEnclosureActor>(Animal->CurrentEnclosure) : nullptr;
+
+	if (Enclosure)
 	{
-		// Use the enclosure's location as origin so the animal stays within bounds.
-		Origin = Animal->CurrentEnclosure->GetActorLocation();
+		// Use the enclosure's volume to get a random point within its actual polygon bounds.
+		WanderTarget = Enclosure->GetRandomPointInEnclosure();
+	}
+	else
+	{
+		// Fallback: random reachable point near the animal's current position.
+		FNavLocation ResultLocation;
+		const bool bFound = NavSys->GetRandomReachablePointInRadius(
+			Pawn->GetActorLocation(), WanderRadius, ResultLocation);
+
+		if (!bFound)
+		{
+			UE_LOG(LogZooKeeper, Verbose, TEXT("BTTask_AnimalWander: no navigable point found."));
+			return EBTNodeResult::Failed;
+		}
+
+		WanderTarget = ResultLocation.Location;
 	}
 
-	FNavLocation ResultLocation;
-	const bool bFound = NavSys->GetRandomReachablePointInRadius(Origin, Radius, ResultLocation);
-
-	if (!bFound)
-	{
-		UE_LOG(LogZooKeeper, Verbose, TEXT("BTTask_AnimalWander: no navigable point found."));
-		return EBTNodeResult::Failed;
-	}
-
-	AIController->MoveToLocation(ResultLocation.Location, 50.0f);
+	AIController->MoveToLocation(WanderTarget, 50.0f);
 	bIsMoving = true;
 
 	return EBTNodeResult::InProgress;

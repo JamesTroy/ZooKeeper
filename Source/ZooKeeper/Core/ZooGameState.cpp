@@ -116,5 +116,10 @@ void AZooGameState::SetWeather(FName NewWeather)
 
 void AZooGameState::SetVisitorCount(int32 Count)
 {
-	VisitorCount = FMath::Max(0, Count);
+	const int32 NewCount = FMath::Max(0, Count);
+	if (VisitorCount != NewCount)
+	{
+		VisitorCount = NewCount;
+		OnVisitorCountChanged.Broadcast(VisitorCount);
+	}
 }

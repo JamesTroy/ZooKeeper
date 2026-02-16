@@ -6,6 +6,7 @@
 
 class AAnimalBase;
 class AEnclosureActor;
+class UDataTable;
 
 /** Broadcast when an animal is registered with the manager. */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnAnimalAdded, AAnimalBase*, Animal);
@@ -68,6 +69,14 @@ public:
 	 */
 	UFUNCTION(BlueprintCallable, Category = "Zoo|Animals", meta = (DeterminesOutputType = "AnimalClass"))
 	AAnimalBase* SpawnAnimal(TSubclassOf<AAnimalBase> AnimalClass, FTransform SpawnTransform, AEnclosureActor* Enclosure);
+
+	// -------------------------------------------------------------------
+	//  Data
+	// -------------------------------------------------------------------
+
+	/** DataTable containing species definitions (FAnimalSpeciesRow). Assign in editor. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Animals")
+	TObjectPtr<UDataTable> SpeciesDataTable;
 
 	// -------------------------------------------------------------------
 	//  Delegates

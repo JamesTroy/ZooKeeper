@@ -3,7 +3,12 @@
 #include "Components/CanvasPanel.h"
 #include "Components/CanvasPanelSlot.h"
 #include "Components/VerticalBox.h"
+#include "Components/VerticalBoxSlot.h"
+#include "Components/HorizontalBox.h"
+#include "Components/HorizontalBoxSlot.h"
 #include "Components/TextBlock.h"
+#include "Components/Button.h"
+#include "Components/ScrollBox.h"
 #include "Components/PanelWidget.h"
 #include "Blueprint/WidgetTree.h"
 #include "Data/BuildingDefinition.h"
@@ -14,25 +19,102 @@ TSharedRef<SWidget> UBuildMenuWidget::RebuildWidget()
 {
 	if (WidgetTree && !WidgetTree->RootWidget)
 	{
+		// Root canvas for positioning
 		UCanvasPanel* RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
 		WidgetTree->RootWidget = RootCanvas;
 
-		UTextBlock* Placeholder = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Placeholder"));
-		Placeholder->SetText(FText::FromString(TEXT("[Build Menu - Coming Soon]")));
-		FSlateFontInfo Font = Placeholder->GetFont();
-		Font.Size = 18;
-		Placeholder->SetFont(Font);
-		Placeholder->SetColorAndOpacity(FSlateColor(FLinearColor::White));
-		UCanvasPanelSlot* Slot = RootCanvas->AddChildToCanvas(Placeholder);
-		Slot->SetAnchors(FAnchors(0.5f, 0.5f));
-		Slot->SetAlignment(FVector2D(0.5f, 0.5f));
-		Slot->SetAutoSize(true);
+		// Main vertical layout
+		UVerticalBox* MainLayout = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("MainLayout"));
+		UCanvasPanelSlot* MainSlot = RootCanvas->AddChildToCanvas(MainLayout);
+		MainSlot->SetAnchors(FAnchors(0.0f, 0.0f, 1.0f, 1.0f));
+		MainSlot->SetOffsets(FMargin(10.0f, 10.0f, 10.0f, 10.0f));
 
-		BuildingListPanel = nullptr;
-		CategoryTitleText = nullptr;
-		SelectedBuildingNameText = nullptr;
-		SelectedBuildingCostText = nullptr;
-		SelectedBuildingDescText = nullptr;
+		// --- Title ---
+		UTextBlock* TitleText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("TitleText"));
+		TitleText->SetText(FText::FromString(TEXT("BUILD MENU")));
+		FSlateFontInfo TitleFont = TitleText->GetFont();
+		TitleFont.Size = 20;
+		TitleText->SetFont(TitleFont);
+		TitleText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		UVerticalBoxSlot* TitleSlot = MainLayout->AddChildToVerticalBox(TitleText);
+		TitleSlot->SetPadding(FMargin(0.0f, 0.0f, 0.0f, 8.0f));
+
+		// --- Category Tabs (horizontal row of labels) ---
+		UHorizontalBox* CategoryBar = WidgetTree->ConstructWidget<UHorizontalBox>(UHorizontalBox::StaticClass(), TEXT("CategoryBar"));
+		UVerticalBoxSlot* CategoryBarSlot = MainLayout->AddChildToVerticalBox(CategoryBar);
+		CategoryBarSlot->SetPadding(FMargin(0.0f, 0.0f, 0.0f, 8.0f));
+
+		// Add category labels
+		const TArray<TPair<FString, EBuildingCategory>> Categories = {
+			{TEXT("Enclosures"), EBuildingCategory::Enclosure},
+			{TEXT("Paths"), EBuildingCategory::Path},
+			{TEXT("Decorations"), EBuildingCategory::Decoration},
+			{TEXT("Facilities"), EBuildingCategory::Facility},
+			{TEXT("Food"), EBuildingCategory::FoodStation},
+			{TEXT("Shelters"), EBuildingCategory::AnimalShelter}
+		};
+
+		for (const auto& Cat : Categories)
+		{
+			UTextBlock* CatLabel = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(),
+				*FString::Printf(TEXT("Cat_%s"), *Cat.Key));
+			CatLabel->SetText(FText::FromString(FString::Printf(TEXT("[%s]"), *Cat.Key)));
+			FSlateFontInfo CatFont = CatLabel->GetFont();
+			CatFont.Size = 12;
+			CatLabel->SetFont(CatFont);
+			CatLabel->SetColorAndOpacity(FSlateColor(FLinearColor(0.8f, 0.8f, 0.8f)));
+			UHorizontalBoxSlot* CatSlot = CategoryBar->AddChildToHorizontalBox(CatLabel);
+			CatSlot->SetPadding(FMargin(0.0f, 0.0f, 12.0f, 0.0f));
+		}
+
+		// --- Category Title ---
+		CategoryTitleText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("CategoryTitle"));
+		CategoryTitleText->SetText(FText::FromString(TEXT("Enclosures")));
+		FSlateFontInfo CatTitleFont = CategoryTitleText->GetFont();
+		CatTitleFont.Size = 16;
+		CategoryTitleText->SetFont(CatTitleFont);
+		CategoryTitleText->SetColorAndOpacity(FSlateColor(FLinearColor(1.0f, 0.9f, 0.4f)));
+		UVerticalBoxSlot* CatTitleSlot = MainLayout->AddChildToVerticalBox(CategoryTitleText);
+		CatTitleSlot->SetPadding(FMargin(0.0f, 0.0f, 0.0f, 4.0f));
+
+		// --- Building List (ScrollBox) ---
+		UScrollBox* BuildingScroll = WidgetTree->ConstructWidget<UScrollBox>(UScrollBox::StaticClass(), TEXT("BuildingScroll"));
+		UVerticalBoxSlot* ScrollSlot = MainLayout->AddChildToVerticalBox(BuildingScroll);
+		ScrollSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
+		ScrollSlot->SetPadding(FMargin(0.0f, 0.0f, 0.0f, 8.0f));
+		BuildingListPanel = BuildingScroll;
+
+		// --- Selected Building Detail Section ---
+		UVerticalBox* DetailBox = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("DetailBox"));
+		UVerticalBoxSlot* DetailSlot = MainLayout->AddChildToVerticalBox(DetailBox);
+		DetailSlot->SetPadding(FMargin(0.0f, 4.0f, 0.0f, 0.0f));
+
+		// Selected building name
+		SelectedBuildingNameText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("SelectedName"));
+		SelectedBuildingNameText->SetText(FText::FromString(TEXT("No building selected")));
+		FSlateFontInfo NameFont = SelectedBuildingNameText->GetFont();
+		NameFont.Size = 14;
+		SelectedBuildingNameText->SetFont(NameFont);
+		SelectedBuildingNameText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		DetailBox->AddChildToVerticalBox(SelectedBuildingNameText);
+
+		// Selected building cost
+		SelectedBuildingCostText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("SelectedCost"));
+		SelectedBuildingCostText->SetText(FText::GetEmpty());
+		FSlateFontInfo CostFont = SelectedBuildingCostText->GetFont();
+		CostFont.Size = 12;
+		SelectedBuildingCostText->SetFont(CostFont);
+		SelectedBuildingCostText->SetColorAndOpacity(FSlateColor(FLinearColor(0.3f, 1.0f, 0.3f)));
+		DetailBox->AddChildToVerticalBox(SelectedBuildingCostText);
+
+		// Selected building description
+		SelectedBuildingDescText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("SelectedDesc"));
+		SelectedBuildingDescText->SetText(FText::GetEmpty());
+		FSlateFontInfo DescFont = SelectedBuildingDescText->GetFont();
+		DescFont.Size = 10;
+		SelectedBuildingDescText->SetFont(DescFont);
+		SelectedBuildingDescText->SetColorAndOpacity(FSlateColor(FLinearColor(0.7f, 0.7f, 0.7f)));
+		DetailBox->AddChildToVerticalBox(SelectedBuildingDescText);
 	}
 
 	return Super::RebuildWidget();
@@ -103,6 +185,7 @@ void UBuildMenuWidget::RefreshBuildingList()
 	TArray<FPrimaryAssetId> AssetIds;
 	AssetManager.GetPrimaryAssetIdList(FPrimaryAssetType("BuildingDefinition"), AssetIds);
 
+	int32 ItemCount = 0;
 	for (const FPrimaryAssetId& AssetId : AssetIds)
 	{
 		FSoftObjectPath AssetPath = AssetManager.GetPrimaryAssetPath(AssetId);
@@ -110,11 +193,40 @@ void UBuildMenuWidget::RefreshBuildingList()
 		{
 			if (BuildingDef->Category == CurrentCategory)
 			{
-				UE_LOG(LogZooKeeper, Verbose, TEXT("BuildMenuWidget: Found building '%s' in category."),
+				// Create a text entry for each building in the list
+				UTextBlock* EntryText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(),
+					*FString::Printf(TEXT("BuildEntry_%d"), ItemCount));
+
+				const FString EntryStr = FString::Printf(TEXT("%s  -  $%d"),
+					*BuildingDef->DisplayName.ToString(), BuildingDef->PurchaseCost);
+				EntryText->SetText(FText::FromString(EntryStr));
+
+				FSlateFontInfo EntryFont = EntryText->GetFont();
+				EntryFont.Size = 12;
+				EntryText->SetFont(EntryFont);
+				EntryText->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+
+				BuildingListPanel->AddChild(EntryText);
+				ItemCount++;
+
+				UE_LOG(LogZooKeeper, Verbose, TEXT("BuildMenuWidget: Added building '%s' to list."),
 					*BuildingDef->DisplayName.ToString());
 			}
 		}
 	}
+
+	if (ItemCount == 0)
+	{
+		UTextBlock* EmptyText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("EmptyListText"));
+		EmptyText->SetText(FText::FromString(TEXT("No buildings available in this category.")));
+		FSlateFontInfo EmptyFont = EmptyText->GetFont();
+		EmptyFont.Size = 11;
+		EmptyText->SetFont(EmptyFont);
+		EmptyText->SetColorAndOpacity(FSlateColor(FLinearColor(0.5f, 0.5f, 0.5f)));
+		BuildingListPanel->AddChild(EmptyText);
+	}
+
+	UE_LOG(LogZooKeeper, Log, TEXT("BuildMenuWidget: Refreshed list with %d buildings."), ItemCount);
 }
 
 void UBuildMenuWidget::Show()

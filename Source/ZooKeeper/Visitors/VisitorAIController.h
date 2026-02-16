@@ -51,8 +51,23 @@ public:
 	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Zoo|Visitor|AI")
 	AActor* FindBench() const;
 
+	/** Invalidates the cached actor lists, forcing a refresh on the next query. */
+	UFUNCTION(BlueprintCallable, Category = "Zoo|Visitor|AI")
+	void InvalidateCache();
+
 protected:
 	/** The behavior tree asset that drives this visitor's decision-making. */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Visitor|AI")
 	TObjectPtr<UBehaviorTree> VisitorBehaviorTree;
+
+private:
+	/** Finds the nearest actor from the given cached array (populates cache lazily). */
+	AActor* FindNearestFromCache(TArray<AActor*>& Cache, const FName& Tag) const;
+
+	/** Refresh a cached actor list if it's empty. */
+	void EnsureCacheValid(TArray<AActor*>& Cache, const FName& Tag) const;
+
+	mutable TArray<AActor*> CachedAttractions;
+	mutable TArray<AActor*> CachedFoodStalls;
+	mutable TArray<AActor*> CachedBenches;
 };

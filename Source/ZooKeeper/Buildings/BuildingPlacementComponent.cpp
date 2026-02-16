@@ -1,6 +1,7 @@
 #include "BuildingPlacementComponent.h"
 #include "ZooBuildingActor.h"
 #include "ZooKeeper/ZooKeeper.h"
+#include "ZooKeeper/Subsystems/EconomySubsystem.h"
 #include "Components/StaticMeshComponent.h"
 #include "Engine/World.h"
 #include "GameFramework/PlayerController.h"
@@ -194,11 +195,23 @@ bool UBuildingPlacementComponent::ConfirmPlacement()
 		return false;
 	}
 
-	// TODO: Deduct cost via EconomySubsystem
-	// if (UEconomySubsystem* Economy = World->GetSubsystem<UEconomySubsystem>())
-	// {
-	//     if (!Economy->TrySpend(BuildingCost)) return false;
-	// }
+	// Deduct cost via EconomySubsystem
+	if (AZooBuildingActor* GhostBuilding = Cast<AZooBuildingActor>(GhostPreviewActor))
+	{
+		const int32 BuildCost = GhostBuilding->PurchaseCost;
+		if (BuildCost > 0)
+		{
+			if (UEconomySubsystem* Economy = World->GetSubsystem<UEconomySubsystem>())
+			{
+				if (!Economy->TrySpend(BuildCost, FString::Printf(TEXT("Building: %s"), *GhostBuilding->BuildingName)))
+				{
+					UE_LOG(LogZooKeeper, Warning, TEXT("BuildingPlacement: Cannot afford building '%s' (cost: %d)."),
+						*GhostBuilding->BuildingName, BuildCost);
+					return false;
+				}
+			}
+		}
+	}
 
 	// Spawn the real building actor at the ghost's location and rotation
 	FActorSpawnParameters SpawnParams;
@@ -281,11 +294,20 @@ bool UBuildingPlacementComponent::IsPlacementValid() const
 	}
 
 	// Check 3: Verify the player can afford the building
-	// TODO: Integrate with EconomySubsystem when available
-	// if (UEconomySubsystem* Economy = World->GetSubsystem<UEconomySubsystem>())
-	// {
-	//     if (!Economy->CanAfford(BuildingCost)) return false;
-	// }
+	if (AZooBuildingActor* GhostBuilding = Cast<AZooBuildingActor>(GhostPreviewActor))
+	{
+		const int32 BuildCost = GhostBuilding->PurchaseCost;
+		if (BuildCost > 0)
+		{
+			if (UEconomySubsystem* Economy = World->GetSubsystem<UEconomySubsystem>())
+			{
+				if (Economy->GetBalance() < BuildCost)
+				{
+					return false;
+				}
+			}
+		}
+	}
 
 	return true;
 }

@@ -1,4 +1,7 @@
 #include "EconomySubsystem.h"
+#include "StaffSubsystem.h"
+#include "AnimalManagerSubsystem.h"
+#include "TimeSubsystem.h"
 #include "ZooKeeper.h"
 
 bool UEconomySubsystem::ShouldCreateSubsystem(UObject* Outer) const
@@ -11,6 +14,15 @@ void UEconomySubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	Super::Initialize(Collection);
 
 	CurrentFunds = 50000;
+
+	// Subscribe to day changes to trigger daily expense processing.
+	if (UWorld* World = GetWorld())
+	{
+		if (UTimeSubsystem* TimeSys = World->GetSubsystem<UTimeSubsystem>())
+		{
+			TimeSys->OnDayChanged.AddDynamic(this, &UEconomySubsystem::HandleDayChanged);
+		}
+	}
 
 	UE_LOG(LogZooKeeper, Log, TEXT("EconomySubsystem::Initialize - Starting funds: %d"), CurrentFunds);
 }
@@ -47,7 +59,15 @@ bool UEconomySubsystem::TrySpend(int32 Amount, FString Reason)
 	Transaction.Amount = Amount;
 	Transaction.Reason = MoveTemp(Reason);
 	Transaction.bIsExpense = true;
-	Transaction.GameTime = 0.0f; // Will be set by caller or time subsystem integration
+	// Set time from TimeSubsystem if available.
+	if (UWorld* World = GetWorld())
+	{
+		if (UTimeSubsystem* TimeSys = World->GetSubsystem<UTimeSubsystem>())
+		{
+			Transaction.GameTime = TimeSys->CurrentTimeOfDay;
+			Transaction.Day = TimeSys->CurrentDay;
+		}
+	}
 
 	TransactionLog.Add(Transaction);
 	OnTransactionCompleted.Broadcast(Transaction);
@@ -79,7 +99,16 @@ void UEconomySubsystem::AddIncome(int32 Amount, FString Reason)
 	Transaction.Amount = Amount;
 	Transaction.Reason = MoveTemp(Reason);
 	Transaction.bIsExpense = false;
-	Transaction.GameTime = 0.0f;
+
+	// Set time from TimeSubsystem if available.
+	if (UWorld* World = GetWorld())
+	{
+		if (UTimeSubsystem* TimeSys = World->GetSubsystem<UTimeSubsystem>())
+		{
+			Transaction.GameTime = TimeSys->CurrentTimeOfDay;
+			Transaction.Day = TimeSys->CurrentDay;
+		}
+	}
 
 	TransactionLog.Add(Transaction);
 	OnTransactionCompleted.Broadcast(Transaction);
@@ -96,42 +125,108 @@ int32 UEconomySubsystem::GetBalance() const
 
 void UEconomySubsystem::ProcessDailyExpenses()
 {
-	// Clear the daily expense log from the previous day
-	DailyExpenseLog.Empty();
-
-	// Copy today's expense transactions into the daily log before clearing
-	for (const FZooTransaction& Transaction : TransactionLog)
+	UWorld* World = GetWorld();
+	if (!World)
 	{
-		if (Transaction.bIsExpense)
+		return;
+	}
+
+	// Archive yesterday's transactions into the daily expense log.
+	DailyExpenseLog = TransactionLog;
+	TransactionLog.Empty();
+
+	// --- Staff Salaries ---
+	if (UStaffSubsystem* StaffSys = World->GetSubsystem<UStaffSubsystem>())
+	{
+		const int32 SalaryCost = StaffSys->GetDailySalaryCost();
+		if (SalaryCost > 0)
 		{
-			DailyExpenseLog.Add(Transaction);
+			TrySpend(SalaryCost, TEXT("Staff salaries"));
 		}
 	}
 
-	UE_LOG(LogZooKeeper, Log, TEXT("EconomySubsystem::ProcessDailyExpenses - Processed %d transactions. Balance: %d"),
-		TransactionLog.Num(), CurrentFunds);
+	// --- Animal Food Costs ---
+	// Estimate daily food cost as $5 per animal.
+	if (UAnimalManagerSubsystem* AnimalMgr = World->GetSubsystem<UAnimalManagerSubsystem>())
+	{
+		const int32 AnimalCount = AnimalMgr->GetAnimalCount();
+		const int32 FoodCost = AnimalCount * 5;
+		if (FoodCost > 0)
+		{
+			TrySpend(FoodCost, FString::Printf(TEXT("Animal food (%d animals)"), AnimalCount));
+		}
+	}
 
-	// Clear the transaction log for the new day
-	TransactionLog.Empty();
+	UE_LOG(LogZooKeeper, Log, TEXT("EconomySubsystem::ProcessDailyExpenses - Daily expenses processed. Balance: %d"),
+		CurrentFunds);
 }
 
 FZooDailyFinanceReport UEconomySubsystem::GetDailyReport() const
 {
 	FZooDailyFinanceReport Report;
+	Report.Transactions = TransactionLog;
 
 	for (const FZooTransaction& Transaction : TransactionLog)
 	{
 		if (Transaction.bIsExpense)
 		{
 			Report.TotalExpenses += Transaction.Amount;
-			Report.ExpenseTransactions.Add(Transaction);
 		}
 		else
 		{
 			Report.TotalIncome += Transaction.Amount;
-			Report.IncomeTransactions.Add(Transaction);
+		}
+	}
+
+	Report.NetProfit = Report.TotalIncome - Report.TotalExpenses;
+
+	if (UWorld* World = GetWorld())
+	{
+		if (UTimeSubsystem* TimeSys = World->GetSubsystem<UTimeSubsystem>())
+		{
+			Report.Day = TimeSys->CurrentDay;
 		}
 	}
 
 	return Report;
+}
+
+void UEconomySubsystem::TakeLoan(int32 Amount)
+{
+	if (Amount <= 0)
+	{
+		return;
+	}
+
+	LoanBalance += Amount;
+	AddIncome(Amount, FString::Printf(TEXT("Loan taken ($%d)"), Amount));
+
+	UE_LOG(LogZooKeeper, Log, TEXT("EconomySubsystem - Loan taken: $%d. Total debt: $%d"), Amount, LoanBalance);
+}
+
+void UEconomySubsystem::RepayLoan(int32 Amount)
+{
+	if (Amount <= 0 || LoanBalance <= 0)
+	{
+		return;
+	}
+
+	const int32 RepayAmount = FMath::Min(Amount, LoanBalance);
+	if (TrySpend(RepayAmount, FString::Printf(TEXT("Loan repayment ($%d)"), RepayAmount)))
+	{
+		LoanBalance -= RepayAmount;
+		UE_LOG(LogZooKeeper, Log, TEXT("EconomySubsystem - Loan repaid: $%d. Remaining debt: $%d"), RepayAmount, LoanBalance);
+	}
+}
+
+void UEconomySubsystem::HandleDayChanged(int32 NewDay)
+{
+	ProcessDailyExpenses();
+
+	// Auto-repay a portion of the loan each day (10% of balance or $500, whichever is greater)
+	if (LoanBalance > 0)
+	{
+		const int32 AutoRepay = FMath::Max(LoanBalance / 10, FMath::Min(500, LoanBalance));
+		RepayLoan(AutoRepay);
+	}
 }

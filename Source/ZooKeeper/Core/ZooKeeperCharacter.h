@@ -8,6 +8,7 @@ class UCameraComponent;
 class UInputAction;
 class UInputMappingContext;
 class UInteractionComponent;
+class UToolComponent;
 struct FInputActionValue;
 
 /**
@@ -41,6 +42,10 @@ public:
 	UFUNCTION(BlueprintPure, Category = "Zoo|Interaction")
 	UInteractionComponent* GetInteractionComponent() const { return InteractionComp; }
 
+	/** Returns the tool component. */
+	UFUNCTION(BlueprintPure, Category = "Zoo|Tools")
+	UToolComponent* GetToolComponent() const { return ToolComp; }
+
 	/** Returns whether the character is currently sprinting. */
 	UFUNCTION(BlueprintPure, Category = "Zoo|Movement")
 	bool IsSprinting() const { return bIsSprinting; }
@@ -62,6 +67,10 @@ protected:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoo|Interaction", meta = (AllowPrivateAccess = "true"))
 	TObjectPtr<UInteractionComponent> InteractionComp;
 
+	/** Manages the currently equipped tool (Hand, FoodBucket, BuildTool, etc.). */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoo|Tools", meta = (AllowPrivateAccess = "true"))
+	TObjectPtr<UToolComponent> ToolComp;
+
 	// ---------------------------------------------------------------
 	//  Enhanced Input Actions (assigned in Blueprint)
 	// ---------------------------------------------------------------
@@ -81,6 +90,26 @@ protected:
 	/** Input action for sprinting (hold). */
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
 	TObjectPtr<UInputAction> IA_Sprint;
+
+	/** Input action for scrolling through tools (mouse wheel). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
+	TObjectPtr<UInputAction> IA_ToolScroll;
+
+	/** Input action for selecting tool 1 (Hand). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
+	TObjectPtr<UInputAction> IA_Tool1;
+
+	/** Input action for selecting tool 2 (Food Bucket). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
+	TObjectPtr<UInputAction> IA_Tool2;
+
+	/** Input action for selecting tool 3 (Build Tool). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
+	TObjectPtr<UInputAction> IA_Tool3;
+
+	/** Input action for selecting tool 4 (Binoculars). */
+	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Input")
+	TObjectPtr<UInputAction> IA_Tool4;
 
 	// ---------------------------------------------------------------
 	//  Movement Settings
@@ -119,6 +148,15 @@ private:
 
 	/** Updates the character movement component's max walk speed based on sprint state. */
 	void UpdateMovementSpeed();
+
+	/** Handles tool scroll wheel input. */
+	void HandleToolScroll(const FInputActionValue& Value);
+
+	/** Select tool by number key. */
+	void HandleSelectTool1();
+	void HandleSelectTool2();
+	void HandleSelectTool3();
+	void HandleSelectTool4();
 
 	/** Whether the character is currently sprinting. */
 	UPROPERTY(VisibleInstanceOnly, BlueprintReadOnly, Category = "Zoo|Movement", meta = (AllowPrivateAccess = "true"))

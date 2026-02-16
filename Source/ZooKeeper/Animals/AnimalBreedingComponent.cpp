@@ -1,6 +1,7 @@
 #include "AnimalBreedingComponent.h"
 #include "AnimalBase.h"
 #include "AnimalNeedsComponent.h"
+#include "Subsystems/TimeSubsystem.h"
 #include "ZooKeeper.h"
 
 UAnimalBreedingComponent::UAnimalBreedingComponent()
@@ -22,12 +23,19 @@ void UAnimalBreedingComponent::TickComponent(float DeltaTime, ELevelTick TickTyp
 
 	if (bIsPregnant)
 	{
-		// Convert real-time DeltaTime into game-day units.
-		// Using the same convention as TimeSubsystem: 1 real second = 1 game minute
-		// => 1 game-day = 24 * 60 real seconds = 1440 seconds.
-		// However, the actual time scale may vary, so we use a simple conversion here.
-		// Callers can also drive gestation directly via TickGestation().
-		const float GameDayDelta = DeltaTime / 1440.0f;
+		// Convert real-time DeltaTime into game-day units using the TimeSubsystem's scale.
+		// GameTimeScale converts real seconds to game seconds; a game day is 86400 game seconds.
+		float TimeScale = 60.0f; // Default: 1 real second = 1 game minute
+		if (UWorld* World = GetWorld())
+		{
+			if (UTimeSubsystem* TimeSys = World->GetSubsystem<UTimeSubsystem>())
+			{
+				TimeScale = TimeSys->GameTimeScale;
+			}
+		}
+
+		const float GameSecondsElapsed = DeltaTime * TimeScale;
+		const float GameDayDelta = GameSecondsElapsed / 86400.0f;
 		TickGestation(GameDayDelta);
 	}
 }

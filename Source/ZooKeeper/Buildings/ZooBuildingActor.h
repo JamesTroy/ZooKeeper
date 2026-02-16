@@ -60,6 +60,10 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Building|State", meta = (ClampMin = "0.0", ClampMax = "1.0"))
 	float Condition;
 
+	/** One-time cost to place this building. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Building|Economy", meta = (ClampMin = "0"))
+	int32 PurchaseCost;
+
 	/** Daily maintenance cost in zoo currency. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Building|Economy", meta = (ClampMin = "0.0"))
 	float MaintenanceCostPerDay;

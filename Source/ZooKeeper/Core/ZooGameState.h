@@ -10,6 +10,9 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnFundsChanged, int32, NewFunds, i
 /** Broadcast when the zoo's reputation changes. */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnReputationChanged, float, NewReputation, float, OldReputation);
 
+/** Broadcast when the visitor count changes. */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnVisitorCountChanged_GameState, int32, NewCount);
+
 /** Broadcast when a new day begins. */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnDayChanged, int32, NewDay);
 
@@ -129,6 +132,10 @@ public:
 	/** Fired whenever CurrentDay changes. */
 	UPROPERTY(BlueprintAssignable, Category = "Zoo|Time")
 	FOnDayChanged OnDayChanged;
+
+	/** Fired whenever VisitorCount changes. */
+	UPROPERTY(BlueprintAssignable, Category = "Zoo|Visitors")
+	FOnVisitorCountChanged_GameState OnVisitorCountChanged;
 
 protected:
 	/** The zoo's current available funds. */

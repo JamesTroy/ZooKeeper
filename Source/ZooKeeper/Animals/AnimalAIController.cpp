@@ -1,6 +1,7 @@
 #include "AnimalAIController.h"
 #include "AnimalBase.h"
 #include "AnimalNeedsComponent.h"
+#include "Data/ZooDataTypes.h"
 #include "ZooKeeper.h"
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
@@ -8,14 +9,11 @@
 
 AAnimalAIController::AAnimalAIController()
 {
-	PrimaryActorTick.bCanEverTick = true;
+	PrimaryActorTick.bCanEverTick = false;
 
 	AnimalBehaviorTree  = nullptr;
 	AnimalBlackboard    = nullptr;
 	CachedNeedsComponent = nullptr;
-
-	BlackboardUpdateInterval = 1.0f;
-	BlackboardUpdateTimer    = 0.0f;
 }
 
 void AAnimalAIController::BeginPlay()
@@ -36,18 +34,31 @@ void AAnimalAIController::OnPossess(APawn* InPawn)
 
 	CachedNeedsComponent = Animal->NeedsComponent;
 
+	// If no behavior tree is manually assigned, try to load from species DataTable.
+	if (!AnimalBehaviorTree)
+	{
+		if (FAnimalSpeciesRow* SpeciesRow = Animal->GetSpeciesData())
+		{
+			UBehaviorTree* SpeciesBT = SpeciesRow->BehaviorTree.LoadSynchronous();
+			if (SpeciesBT)
+			{
+				AnimalBehaviorTree = SpeciesBT;
+				UE_LOG(LogZooKeeper, Log, TEXT("AnimalAIController: loaded BT from species DataTable for '%s'."),
+				       *Animal->AnimalName);
+			}
+		}
+	}
+
 	// Initialize the blackboard.
 	if (AnimalBlackboard)
 	{
 		UseBlackboard(AnimalBlackboard, Blackboard);
 	}
 
-	// Immediately write the initial need values.
+	// Write initial enclosure reference into the blackboard.
+	// Need values are synced by BTService_UpdateNeeds during behavior tree execution.
 	if (Blackboard)
 	{
-		UpdateBlackboardFromNeeds();
-
-		// Set the enclosure reference.
 		Blackboard->SetValueAsObject(FName("CurrentEnclosure"), Animal->CurrentEnclosure);
 	}
 
@@ -71,40 +82,3 @@ void AAnimalAIController::OnUnPossess()
 	Super::OnUnPossess();
 }
 
-void AAnimalAIController::Tick(float DeltaTime)
-{
-	Super::Tick(DeltaTime);
-
-	BlackboardUpdateTimer += DeltaTime;
-	if (BlackboardUpdateTimer >= BlackboardUpdateInterval)
-	{
-		BlackboardUpdateTimer = 0.0f;
-		UpdateBlackboardFromNeeds();
-	}
-}
-
-void AAnimalAIController::UpdateBlackboardFromNeeds()
-{
-	if (!Blackboard || !CachedNeedsComponent)
-	{
-		return;
-	}
-
-	Blackboard->SetValueAsFloat(FName("Hunger"),    CachedNeedsComponent->Hunger);
-	Blackboard->SetValueAsFloat(FName("Thirst"),    CachedNeedsComponent->Thirst);
-	Blackboard->SetValueAsFloat(FName("Energy"),    CachedNeedsComponent->Energy);
-	Blackboard->SetValueAsFloat(FName("Happiness"), CachedNeedsComponent->Happiness);
-	Blackboard->SetValueAsFloat(FName("Social"),    CachedNeedsComponent->Social);
-
-	Blackboard->SetValueAsName(FName("MostUrgentNeed"), CachedNeedsComponent->GetMostUrgentNeed());
-	Blackboard->SetValueAsBool(FName("IsAnyCritical"),  CachedNeedsComponent->IsAnyCritical());
-
-	// Update enclosure reference from the animal.
-	if (APawn* ControlledPawn = GetPawn())
-	{
-		if (AAnimalBase* Animal = Cast<AAnimalBase>(ControlledPawn))
-		{
-			Blackboard->SetValueAsObject(FName("CurrentEnclosure"), Animal->CurrentEnclosure);
-		}
-	}
-}

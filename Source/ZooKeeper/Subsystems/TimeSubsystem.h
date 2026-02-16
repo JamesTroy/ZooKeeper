@@ -128,6 +128,14 @@ public:
 	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoo|Time")
 	bool bIsPaused;
 
+	/** Hour at which the sun rises (default 6). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Time", meta = (ClampMin = "0.0", ClampMax = "12.0"))
+	float SunriseHour;
+
+	/** Hour at which the sun sets (default 18). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Time", meta = (ClampMin = "12.0", ClampMax = "24.0"))
+	float SunsetHour;
+
 private:
 	/** The hour that was current on the previous tick, used to detect hour transitions. */
 	int32 PreviousHour;

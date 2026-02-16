@@ -64,6 +64,14 @@ public:
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Animal")
 	UDataTable* SpeciesDataTable;
 
+	/** Walking speed in cm/s, loaded from species DataTable on BeginPlay. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoo|Animal|Movement")
+	float AnimalWalkSpeed;
+
+	/** Running speed in cm/s, loaded from species DataTable on BeginPlay. */
+	UPROPERTY(VisibleAnywhere, BlueprintReadOnly, Category = "Zoo|Animal|Movement")
+	float AnimalRunSpeed;
+
 	/**
 	 * Looks up the species row in SpeciesDataTable using SpeciesID.
 	 * @return Pointer to the row, or nullptr if not found.

@@ -7,6 +7,8 @@ UTimeSubsystem::UTimeSubsystem()
 	, CurrentDay(1)
 	, CurrentSeason(0) // Spring
 	, bIsPaused(false)
+	, SunriseHour(6.0f)
+	, SunsetHour(18.0f)
 	, PreviousHour(6)
 {
 }
@@ -55,7 +57,7 @@ void UTimeSubsystem::Tick(float DeltaTime)
 		CurrentTimeOfDay -= 24.0f;
 		CurrentDay++;
 
-		OnTimeDayChanged.Broadcast(CurrentDay);
+		OnDayChanged.Broadcast(CurrentDay);
 
 		UE_LOG(LogZooKeeper, Log, TEXT("TimeSubsystem - New day: %d"), CurrentDay);
 
@@ -122,7 +124,7 @@ void UTimeSubsystem::AdvanceToNextDay()
 	CurrentTimeOfDay = 6.0f; // Start the new day at 6 AM
 	PreviousHour = 6;
 
-	OnTimeDayChanged.Broadcast(CurrentDay);
+	OnDayChanged.Broadcast(CurrentDay);
 
 	UE_LOG(LogZooKeeper, Log, TEXT("TimeSubsystem - Advanced to day %d"), CurrentDay);
 
@@ -137,36 +139,34 @@ void UTimeSubsystem::AdvanceToNextDay()
 
 FRotator UTimeSubsystem::GetSunRotation() const
 {
-	// Sun rises at hour 6, sets at hour 18.
-	// During daytime (6-18), pitch goes from -90 (horizon) to 0 (zenith) and back to -90.
-	// During nighttime, the sun is below the horizon.
+	// Sun rises at SunriseHour, sets at SunsetHour (configurable).
+	const float DaylightDuration = SunsetHour - SunriseHour;
+	const float NightDuration = 24.0f - DaylightDuration;
 
 	float SunPitch;
 
-	if (CurrentTimeOfDay >= 6.0f && CurrentTimeOfDay <= 18.0f)
+	if (CurrentTimeOfDay >= SunriseHour && CurrentTimeOfDay <= SunsetHour)
 	{
-		// Daytime: map [6, 18] -> [0, 1] -> pitch arc from -90 to 90 (using sin for smooth arc)
-		const float DayProgress = (CurrentTimeOfDay - 6.0f) / 12.0f; // 0 at sunrise, 1 at sunset
-		// At progress 0 => pitch = 0 (horizon), at 0.5 => pitch = 90 (zenith), at 1 => pitch = 0 (horizon again)
+		// Daytime: map [Sunrise, Sunset] -> [0, 1] -> sin arc
+		const float DayProgress = (CurrentTimeOfDay - SunriseHour) / DaylightDuration;
 		SunPitch = FMath::Sin(DayProgress * PI) * 90.0f;
 	}
 	else
 	{
 		// Nighttime: sun is below horizon
 		float NightProgress;
-		if (CurrentTimeOfDay > 18.0f)
+		if (CurrentTimeOfDay > SunsetHour)
 		{
-			NightProgress = (CurrentTimeOfDay - 18.0f) / 12.0f;
+			NightProgress = (CurrentTimeOfDay - SunsetHour) / NightDuration;
 		}
 		else
 		{
-			NightProgress = (CurrentTimeOfDay + 6.0f) / 12.0f;
+			NightProgress = (CurrentTimeOfDay + (24.0f - SunsetHour)) / NightDuration;
 		}
 		SunPitch = -FMath::Sin(NightProgress * PI) * 90.0f;
 	}
 
 	// Yaw rotates the sun east-to-west over the course of the day
-	// Map [0, 24] -> [0, 360]
 	const float SunYaw = (CurrentTimeOfDay / 24.0f) * 360.0f - 90.0f;
 
 	return FRotator(SunPitch, SunYaw, 0.0f);

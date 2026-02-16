@@ -38,7 +38,22 @@ void AVisitorAIController::OnUnPossess()
 	Super::OnUnPossess();
 }
 
-AActor* AVisitorAIController::FindNearestAttraction() const
+void AVisitorAIController::InvalidateCache()
+{
+	CachedAttractions.Empty();
+	CachedFoodStalls.Empty();
+	CachedBenches.Empty();
+}
+
+void AVisitorAIController::EnsureCacheValid(TArray<AActor*>& Cache, const FName& Tag) const
+{
+	if (Cache.Num() == 0)
+	{
+		UGameplayStatics::GetAllActorsWithTag(GetWorld(), Tag, Cache);
+	}
+}
+
+AActor* AVisitorAIController::FindNearestFromCache(TArray<AActor*>& Cache, const FName& Tag) const
 {
 	APawn* ControlledPawn = GetPawn();
 	if (!ControlledPawn)
@@ -46,99 +61,41 @@ AActor* AVisitorAIController::FindNearestAttraction() const
 		return nullptr;
 	}
 
+	EnsureCacheValid(Cache, Tag);
+
 	const FVector PawnLocation = ControlledPawn->GetActorLocation();
-
-	// Find all actors tagged as attractions (enclosures with animals)
-	TArray<AActor*> Attractions;
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName(TEXT("Attraction")), Attractions);
-
-	AActor* NearestAttraction = nullptr;
+	AActor* Nearest = nullptr;
 	float NearestDistSq = TNumericLimits<float>::Max();
 
-	for (AActor* Attraction : Attractions)
+	for (AActor* Actor : Cache)
 	{
-		if (!Attraction)
+		if (!Actor)
 		{
 			continue;
 		}
 
-		const float DistSq = FVector::DistSquared(PawnLocation, Attraction->GetActorLocation());
+		const float DistSq = FVector::DistSquared(PawnLocation, Actor->GetActorLocation());
 		if (DistSq < NearestDistSq)
 		{
 			NearestDistSq = DistSq;
-			NearestAttraction = Attraction;
+			Nearest = Actor;
 		}
 	}
 
-	return NearestAttraction;
+	return Nearest;
+}
+
+AActor* AVisitorAIController::FindNearestAttraction() const
+{
+	return FindNearestFromCache(CachedAttractions, FName(TEXT("Attraction")));
 }
 
 AActor* AVisitorAIController::FindFoodStall() const
 {
-	APawn* ControlledPawn = GetPawn();
-	if (!ControlledPawn)
-	{
-		return nullptr;
-	}
-
-	const FVector PawnLocation = ControlledPawn->GetActorLocation();
-
-	// Find all actors tagged as food stalls
-	TArray<AActor*> FoodStalls;
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName(TEXT("FoodStall")), FoodStalls);
-
-	AActor* NearestStall = nullptr;
-	float NearestDistSq = TNumericLimits<float>::Max();
-
-	for (AActor* Stall : FoodStalls)
-	{
-		if (!Stall)
-		{
-			continue;
-		}
-
-		const float DistSq = FVector::DistSquared(PawnLocation, Stall->GetActorLocation());
-		if (DistSq < NearestDistSq)
-		{
-			NearestDistSq = DistSq;
-			NearestStall = Stall;
-		}
-	}
-
-	return NearestStall;
+	return FindNearestFromCache(CachedFoodStalls, FName(TEXT("FoodStall")));
 }
 
 AActor* AVisitorAIController::FindBench() const
 {
-	APawn* ControlledPawn = GetPawn();
-	if (!ControlledPawn)
-	{
-		return nullptr;
-	}
-
-	const FVector PawnLocation = ControlledPawn->GetActorLocation();
-
-	// Find all actors tagged as benches / resting spots
-	TArray<AActor*> Benches;
-	UGameplayStatics::GetAllActorsWithTag(GetWorld(), FName(TEXT("Bench")), Benches);
-
-	AActor* NearestBench = nullptr;
-	float NearestDistSq = TNumericLimits<float>::Max();
-
-	for (AActor* Bench : Benches)
-	{
-		if (!Bench)
-		{
-			continue;
-		}
-
-		const float DistSq = FVector::DistSquared(PawnLocation, Bench->GetActorLocation());
-		if (DistSq < NearestDistSq)
-		{
-			NearestDistSq = DistSq;
-			NearestBench = Bench;
-		}
-	}
-
-	return NearestBench;
+	return FindNearestFromCache(CachedBenches, FName(TEXT("Bench")));
 }

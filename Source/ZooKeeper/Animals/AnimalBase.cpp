@@ -2,13 +2,10 @@
 #include "AnimalNeedsComponent.h"
 #include "ZooKeeper.h"
 #include "Engine/DataTable.h"
+#include "GameFramework/CharacterMovementComponent.h"
 #include "Subsystems/AnimalManagerSubsystem.h"
 
-// ---------------------------------------------------------------------------
-//  Forward-declared struct -- minimal definition for DataTable row lookup.
-//  The authoritative definition lives in Data/AnimalSpeciesRow.h once created.
-// ---------------------------------------------------------------------------
-#include "Data/AnimalSpeciesRow.h"
+#include "Data/ZooDataTypes.h"
 
 // ---------------------------------------------------------------------------
 AAnimalBase::AAnimalBase()
@@ -20,6 +17,8 @@ AAnimalBase::AAnimalBase()
 	Age         = 0;
 	CurrentEnclosure  = nullptr;
 	SpeciesDataTable  = nullptr;
+	AnimalWalkSpeed   = 200.0f;
+	AnimalRunSpeed    = 600.0f;
 
 	// Create the needs component as a default sub-object.
 	NeedsComponent = CreateDefaultSubobject<UAnimalNeedsComponent>(TEXT("NeedsComponent"));
@@ -32,6 +31,29 @@ AAnimalBase::AAnimalBase()
 void AAnimalBase::BeginPlay()
 {
 	Super::BeginPlay();
+
+	// Load species data from the DataTable and apply movement speeds + need decay rates.
+	if (FAnimalSpeciesRow* SpeciesRow = GetSpeciesData())
+	{
+		AnimalWalkSpeed = SpeciesRow->WalkSpeed;
+		AnimalRunSpeed  = SpeciesRow->RunSpeed;
+
+		if (UCharacterMovementComponent* MoveComp = GetCharacterMovement())
+		{
+			MoveComp->MaxWalkSpeed = AnimalWalkSpeed;
+		}
+
+		// Override need decay rates from species data.
+		if (NeedsComponent)
+		{
+			NeedsComponent->HungerDecayRate    = SpeciesRow->HungerDecayRate;
+			NeedsComponent->ThirstDecayRate    = SpeciesRow->ThirstDecayRate;
+			NeedsComponent->EnergyDecayRate    = SpeciesRow->EnergyDecayRate;
+			NeedsComponent->HealthDecayRate    = SpeciesRow->HealthDecayRate;
+			NeedsComponent->HappinessDecayRate = SpeciesRow->HappinessDecayRate;
+			NeedsComponent->SocialDecayRate    = SpeciesRow->SocialDecayRate;
+		}
+	}
 
 	// Bind to the needs component's critical delegate so we can re-broadcast.
 	if (NeedsComponent)
@@ -48,8 +70,8 @@ void AAnimalBase::BeginPlay()
 		}
 	}
 
-	UE_LOG(LogZooKeeper, Log, TEXT("Animal '%s' (Species: %s) spawned."),
-	       *AnimalName, *SpeciesID.ToString());
+	UE_LOG(LogZooKeeper, Log, TEXT("Animal '%s' (Species: %s) spawned. WalkSpeed=%.0f RunSpeed=%.0f"),
+	       *AnimalName, *SpeciesID.ToString(), AnimalWalkSpeed, AnimalRunSpeed);
 }
 
 void AAnimalBase::EndPlay(const EEndPlayReason::Type EndPlayReason)

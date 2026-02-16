@@ -14,6 +14,18 @@ void UWeatherSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	CurrentWeather = EWeatherState::Clear;
 	WeatherChangePeriod = 300.0f; // 300 game seconds
 	WeatherChangeTimer = WeatherChangePeriod;
+	CachedSeason = 0;
+
+	// Subscribe to season and hour changes instead of polling TimeSubsystem each tick.
+	if (UWorld* World = GetWorld())
+	{
+		if (UTimeSubsystem* TimeSys = World->GetSubsystem<UTimeSubsystem>())
+		{
+			TimeSys->OnSeasonChanged.AddDynamic(this, &UWeatherSubsystem::HandleSeasonChanged);
+			TimeSys->OnHourChanged.AddDynamic(this, &UWeatherSubsystem::HandleHourChanged);
+			CachedSeason = TimeSys->CurrentSeason;
+		}
+	}
 
 	UE_LOG(LogZooKeeper, Log, TEXT("WeatherSubsystem::Initialize - Starting weather: Clear, Period: %.0fs"),
 		WeatherChangePeriod);
@@ -34,17 +46,7 @@ void UWeatherSubsystem::Tick(float DeltaTime)
 	{
 		WeatherChangeTimer = WeatherChangePeriod;
 
-		// Query the TimeSubsystem for the current season to influence weather selection.
-		int32 Season = 0;
-		if (const UWorld* World = GetWorld())
-		{
-			if (const UTimeSubsystem* TimeSub = World->GetSubsystem<UTimeSubsystem>())
-			{
-				Season = TimeSub->CurrentSeason;
-			}
-		}
-
-		const EWeatherState NewWeather = PickRandomWeather(Season);
+		const EWeatherState NewWeather = PickRandomWeather(CachedSeason);
 
 		if (NewWeather != CurrentWeather)
 		{
@@ -55,6 +57,28 @@ void UWeatherSubsystem::Tick(float DeltaTime)
 				*GetWeatherDisplayName().ToString());
 		}
 	}
+}
+
+void UWeatherSubsystem::HandleSeasonChanged(int32 NewSeason)
+{
+	CachedSeason = NewSeason;
+
+	// Force a weather change when the season transitions.
+	const EWeatherState NewWeather = PickRandomWeather(CachedSeason);
+	if (NewWeather != CurrentWeather)
+	{
+		CurrentWeather = NewWeather;
+		OnWeatherChanged.Broadcast(CurrentWeather);
+
+		UE_LOG(LogZooKeeper, Log, TEXT("WeatherSubsystem - Season changed, new weather: %s"),
+			*GetWeatherDisplayName().ToString());
+	}
+}
+
+void UWeatherSubsystem::HandleHourChanged(int32 NewHour)
+{
+	// Weather timer is decremented in Tick, but we also check on hour boundaries
+	// for more responsive weather changes in case Tick is not being called regularly.
 }
 
 void UWeatherSubsystem::ForceWeather(EWeatherState NewWeather)

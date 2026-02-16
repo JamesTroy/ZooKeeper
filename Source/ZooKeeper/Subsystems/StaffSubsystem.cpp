@@ -1,4 +1,5 @@
 #include "StaffSubsystem.h"
+#include "Staff/StaffCharacter.h"
 #include "Buildings/EnclosureActor.h"
 #include "ZooKeeper.h"
 
@@ -105,6 +106,16 @@ int32 UStaffSubsystem::GetDailySalaryCost() const
 	return TotalCost;
 }
 
+FStaffRecord UStaffSubsystem::GetStaffRecord(int32 StaffID) const
+{
+	const int32 Index = FindStaffIndex(StaffID);
+	if (Index != INDEX_NONE)
+	{
+		return StaffRecords[Index];
+	}
+	return FStaffRecord();
+}
+
 int32 UStaffSubsystem::FindStaffIndex(int32 StaffID) const
 {
 	for (int32 i = 0; i < StaffRecords.Num(); ++i)
@@ -117,14 +128,35 @@ int32 UStaffSubsystem::FindStaffIndex(int32 StaffID) const
 	return INDEX_NONE;
 }
 
+void UStaffSubsystem::RegisterStaff(AStaffCharacter* StaffCharacter)
+{
+	if (!StaffCharacter)
+	{
+		return;
+	}
+
+	UE_LOG(LogZooKeeper, Log, TEXT("StaffSubsystem::RegisterStaff - '%s'"), *StaffCharacter->StaffName);
+}
+
+void UStaffSubsystem::UnregisterStaff(AStaffCharacter* StaffCharacter)
+{
+	if (!StaffCharacter)
+	{
+		return;
+	}
+
+	UE_LOG(LogZooKeeper, Log, TEXT("StaffSubsystem::UnregisterStaff - '%s'"), *StaffCharacter->StaffName);
+}
+
 int32 UStaffSubsystem::GetDefaultSalary(EStaffType Type)
 {
 	switch (Type)
 	{
-	case EStaffType::Keeper:        return 100;
+	case EStaffType::Zookeeper:     return 100;
 	case EStaffType::Veterinarian:  return 200;
 	case EStaffType::Janitor:       return 75;
 	case EStaffType::Mechanic:      return 125;
+	case EStaffType::Guide:         return 90;
 	default:                        return 100;
 	}
 }

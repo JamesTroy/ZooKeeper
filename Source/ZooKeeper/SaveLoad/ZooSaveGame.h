@@ -22,23 +22,24 @@ struct ZOOKEEPER_API FZooAnimalSaveData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	FTransform Transform;
 
-	/** Current hunger level (0 = full, 1 = starving). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	float Hunger = 0.0f;
 
-	/** Current thirst level (0 = quenched, 1 = dehydrated). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	float Thirst = 0.0f;
 
-	/** Current health (0 = dead, 1 = perfect health). */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	float Energy = 1.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	float Health = 1.0f;
 
-	/** Current happiness (0 = miserable, 1 = ecstatic). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	float Happiness = 0.5f;
 
-	/** The animal's player-given name. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	float Social = 0.5f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	FString AnimalName;
 };
@@ -67,6 +68,32 @@ struct ZOOKEEPER_API FZooBuildingSaveData
 };
 
 /**
+ * FZooStaffSaveData
+ *
+ * Serializable snapshot of a staff member's state for save/load.
+ */
+USTRUCT(BlueprintType)
+struct ZOOKEEPER_API FZooStaffSaveData
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	int32 StaffID = INDEX_NONE;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	FString Name;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	uint8 Type = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	int32 Salary = 100;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	float Skill = 0.5f;
+};
+
+/**
  * UZooSaveGame
  *
  * USaveGame subclass that holds all persistent zoo state.
@@ -80,27 +107,67 @@ class ZOOKEEPER_API UZooSaveGame : public USaveGame
 public:
 	UZooSaveGame();
 
-	/** The zoo's fund balance at the time of saving. */
+	/** Save format version for migration support. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	int32 SaveVersion = 1;
+
+	// --- Core State ---
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	int32 SavedFunds;
 
-	/** The in-game day number at the time of saving. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	int32 SavedDay;
 
-	/** The time of day (0-24 float) at the time of saving. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	float SavedTimeOfDay;
 
-	/** The player-given name for the zoo. */
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	int32 SavedSeason;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	FString ZooName;
 
-	/** Saved state for every animal in the zoo. */
+	// --- Entities ---
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	TArray<FZooAnimalSaveData> SavedAnimals;
 
-	/** Saved state for every building in the zoo. */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
 	TArray<FZooBuildingSaveData> SavedBuildings;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	TArray<FZooStaffSaveData> SavedStaff;
+
+	// --- Research & Milestones ---
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	TArray<FName> CompletedResearch;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	FName CurrentResearchID;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	float CurrentResearchProgress;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	TArray<FName> AchievedMilestones;
+
+	// --- Weather ---
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	uint8 SavedWeatherState;
+
+	// --- Economy ---
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	int32 LoanBalance;
+
+	// --- Player ---
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	FTransform PlayerTransform;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|SaveLoad")
+	uint8 ActiveToolIndex;
 };

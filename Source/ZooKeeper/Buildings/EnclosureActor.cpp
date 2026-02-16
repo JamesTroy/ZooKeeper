@@ -2,6 +2,9 @@
 #include "EnclosureVolumeComponent.h"
 #include "ZooKeeper/ZooKeeper.h"
 #include "ZooKeeper/Subsystems/BuildingManagerSubsystem.h"
+#include "ZooKeeper/Subsystems/AnimalManagerSubsystem.h"
+#include "ZooKeeper/Data/ZooDataTypes.h"
+#include "Engine/DataTable.h"
 
 AEnclosureActor::AEnclosureActor()
 	: EnclosureArea(0.0f)
@@ -106,15 +109,40 @@ FVector AEnclosureActor::GetRandomPointInEnclosure() const
 
 bool AEnclosureActor::IsSuitableForSpecies(FName SpeciesID) const
 {
-	// TODO: Implement species-to-biome mapping via a data table or species definition.
-	// For now, any enclosure with a valid biome type is considered suitable.
 	if (BiomeType.IsNone())
 	{
 		UE_LOG(LogZooKeeper, Warning, TEXT("Enclosure '%s': No biome type set, species suitability check failed."), *BuildingName);
 		return false;
 	}
 
-	// Placeholder: all non-empty biome types are suitable for all species.
-	// This will be replaced with a proper lookup when the species data system is implemented.
+	// Look up the species data from the AnimalManagerSubsystem's DataTable.
+	if (UWorld* World = GetWorld())
+	{
+		if (UAnimalManagerSubsystem* AnimalManager = World->GetSubsystem<UAnimalManagerSubsystem>())
+		{
+			if (UDataTable* SpeciesTable = AnimalManager->SpeciesDataTable)
+			{
+				FAnimalSpeciesRow* SpeciesRow = SpeciesTable->FindRow<FAnimalSpeciesRow>(SpeciesID, TEXT("IsSuitableForSpecies"));
+				if (SpeciesRow)
+				{
+					// Compare the enclosure's biome type against the species' preferred biome.
+					if (SpeciesRow->PreferredBiome != BiomeType)
+					{
+						UE_LOG(LogZooKeeper, Log, TEXT("Enclosure '%s' (Biome: %s) not suitable for species '%s' (Preferred: %s)."),
+							*BuildingName, *BiomeType.ToString(), *SpeciesID.ToString(), *SpeciesRow->PreferredBiome.ToString());
+						return false;
+					}
+					return true;
+				}
+				else
+				{
+					UE_LOG(LogZooKeeper, Warning, TEXT("Enclosure '%s': Species '%s' not found in DataTable."),
+						*BuildingName, *SpeciesID.ToString());
+				}
+			}
+		}
+	}
+
+	// Fallback: allow if we can't look up the species data.
 	return true;
 }

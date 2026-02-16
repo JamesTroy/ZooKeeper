@@ -2,61 +2,8 @@
 
 #include "CoreMinimal.h"
 #include "Subsystems/WorldSubsystem.h"
+#include "Economy/EconomyTypes.h"
 #include "EconomySubsystem.generated.h"
-
-/**
- * FZooTransaction
- *
- * Record of a single financial transaction within the zoo.
- */
-USTRUCT(BlueprintType)
-struct ZOOKEEPER_API FZooTransaction
-{
-	GENERATED_BODY()
-
-	/** The monetary amount of this transaction (always positive). */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zoo|Economy")
-	int32 Amount = 0;
-
-	/** Human-readable reason for this transaction. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zoo|Economy")
-	FString Reason;
-
-	/** True if this transaction represents money spent; false for income. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zoo|Economy")
-	bool bIsExpense = false;
-
-	/** The in-game time at which this transaction occurred. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zoo|Economy")
-	float GameTime = 0.0f;
-};
-
-/**
- * FZooDailyFinanceReport
- *
- * Summary of a single day's financial activity.
- */
-USTRUCT(BlueprintType)
-struct ZOOKEEPER_API FZooDailyFinanceReport
-{
-	GENERATED_BODY()
-
-	/** Total income earned during the day. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zoo|Economy")
-	int32 TotalIncome = 0;
-
-	/** Total expenses paid during the day. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zoo|Economy")
-	int32 TotalExpenses = 0;
-
-	/** All income transactions for the day. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zoo|Economy")
-	TArray<FZooTransaction> IncomeTransactions;
-
-	/** All expense transactions for the day. */
-	UPROPERTY(EditAnywhere, BlueprintReadOnly, Category = "Zoo|Economy")
-	TArray<FZooTransaction> ExpenseTransactions;
-};
 
 /** Broadcast when the zoo's fund balance changes. */
 DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnEconomyFundsChanged, int32, NewBalance);
@@ -124,6 +71,22 @@ public:
 	FZooDailyFinanceReport GetDailyReport() const;
 
 	// -------------------------------------------------------------------
+	//  Loan System
+	// -------------------------------------------------------------------
+
+	/** Takes a loan of the given amount. Adds funds and increases loan balance. */
+	UFUNCTION(BlueprintCallable, Category = "Zoo|Economy")
+	void TakeLoan(int32 Amount);
+
+	/** Manually repays part or all of the current loan. */
+	UFUNCTION(BlueprintCallable, Category = "Zoo|Economy")
+	void RepayLoan(int32 Amount);
+
+	/** Returns the current outstanding loan balance. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Zoo|Economy")
+	int32 GetLoanBalance() const { return LoanBalance; }
+
+	// -------------------------------------------------------------------
 	//  Delegates
 	// -------------------------------------------------------------------
 
@@ -145,6 +108,10 @@ public:
 	int32 CurrentFunds;
 
 private:
+	/** Called when the day changes — triggers daily expense processing. */
+	UFUNCTION()
+	void HandleDayChanged(int32 NewDay);
+
 	/** Log of all transactions for the current day. Cleared at the start of each new day. */
 	UPROPERTY()
 	TArray<FZooTransaction> TransactionLog;
@@ -152,4 +119,8 @@ private:
 	/** Accumulated daily expense total used for reporting. */
 	UPROPERTY()
 	TArray<FZooTransaction> DailyExpenseLog;
+
+	/** Current outstanding loan balance. */
+	UPROPERTY()
+	int32 LoanBalance = 0;
 };
