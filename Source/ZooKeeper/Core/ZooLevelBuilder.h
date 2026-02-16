@@ -6,6 +6,7 @@
 
 class UStaticMesh;
 class UMaterialInstanceDynamic;
+class UMaterialInterface;
 
 /**
  * AZooLevelBuilder
@@ -37,6 +38,10 @@ private:
 
   UPROPERTY()
   TObjectPtr<UStaticMesh> PlaneMesh;
+
+  // Cached base material for coloring
+  UPROPERTY()
+  TObjectPtr<UMaterialInterface> BaseMaterial;
 
   /** Creates a colored static mesh component attached to this actor. */
   UStaticMeshComponent *

@@ -5,6 +5,7 @@
 #include "Components/StaticMeshComponent.h"
 #include "Engine/StaticMesh.h"
 #include "Materials/MaterialInstanceDynamic.h"
+#include "Materials/MaterialInterface.h"
 #include "UObject/ConstructorHelpers.h"
 
 AZooLevelBuilder::AZooLevelBuilder() : BlockCounter(0) {
@@ -31,6 +32,13 @@ AZooLevelBuilder::AZooLevelBuilder() : BlockCounter(0) {
     SphereMesh = SphereFinder.Object;
   if (PlaneFinder.Succeeded())
     PlaneMesh = PlaneFinder.Object;
+
+  // Cache the basic shape material (this material supports a "Color" parameter)
+  static ConstructorHelpers::FObjectFinder<UMaterialInterface> MatFinder(
+      TEXT("/Engine/BasicShapes/BasicShapeMaterial"));
+  if (MatFinder.Succeeded()) {
+    BaseMaterial = MatFinder.Object;
+  }
 }
 
 void AZooLevelBuilder::BeginPlay() {
@@ -76,13 +84,14 @@ UStaticMeshComponent *AZooLevelBuilder::CreateBlock(
   Comp->AttachToComponent(GetRootComponent(),
                           FAttachmentTransformRules::KeepWorldTransform);
 
-  // Apply color via dynamic material
-  UMaterialInterface *BaseMat = Comp->GetMaterial(0);
-  if (BaseMat) {
+  // Apply color via dynamic material instance from the BasicShapeMaterial
+  UMaterialInterface *MatToUse =
+      BaseMaterial.Get() ? BaseMaterial.Get() : Comp->GetMaterial(0);
+  if (MatToUse) {
     UMaterialInstanceDynamic *DynMat =
-        UMaterialInstanceDynamic::Create(BaseMat, this);
+        UMaterialInstanceDynamic::Create(MatToUse, this);
     if (DynMat) {
-      DynMat->SetVectorParameterValue(TEXT("BaseColor"), Color);
+      // BasicShapeMaterial uses "Color" parameter
       DynMat->SetVectorParameterValue(TEXT("Color"), Color);
       Comp->SetMaterial(0, DynMat);
     }

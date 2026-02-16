@@ -247,19 +247,24 @@ void AZooPlayerController::CreateDefaultInputAssets() {
 
     // The character's SetupPlayerInputComponent() already ran during
     // possession, but at that point all IA_ pointers were null.
-    // Destroy and recreate the input component to force a re-bind
-    // with the newly created input actions.
+    // Clear the existing bindings and re-run setup with the new actions.
     if (ZooChar->InputComponent) {
-      ZooChar->DestroyPlayerInputComponent();
-      ZooChar->CreatePlayerInputComponent();
-      if (ZooChar->InputComponent) {
-        ZooChar->SetupPlayerInputComponent(ZooChar->InputComponent);
+      UEnhancedInputComponent *EIC =
+          Cast<UEnhancedInputComponent>(ZooChar->InputComponent);
+      if (EIC) {
+        EIC->ClearActionBindings();
       }
+      ZooChar->SetupPlayerInputComponent(ZooChar->InputComponent);
+      UE_LOG(
+          LogZooKeeper, Log,
+          TEXT("ZooPlayerController::CreateDefaultInputAssets - Input actions "
+               "assigned and re-bound to character."));
+    } else {
+      UE_LOG(
+          LogZooKeeper, Warning,
+          TEXT("ZooPlayerController::CreateDefaultInputAssets - Character has "
+               "no InputComponent."));
     }
-
-    UE_LOG(LogZooKeeper, Log,
-           TEXT("ZooPlayerController::CreateDefaultInputAssets - Input actions "
-                "assigned and re-bound to character."));
   } else {
     UE_LOG(LogZooKeeper, Warning,
            TEXT("ZooPlayerController::CreateDefaultInputAssets - No "
