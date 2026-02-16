@@ -1,0 +1,39 @@
+# UE5 Build artifacts
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Build/
+
+# IDE files
+.vs/
+.vscode/
+.idea/
+*.sln
+*.suo
+*.opensdf
+*.sdf
+*.VC.db
+*.VC.opendb
+*.xcworkspace
+*.xcodeproj
+
+# OS files
+.DS_Store
+Thumbs.db
+*.swp
+*~
+
+# Compiled assets
+*.elf
+*.exe
+*.dll
+*.dylib
+*.so
+*.pdb
+
+# Local config overrides
+Config/UserSettings/
+
+# Crashpad
+CrashReportClient/
