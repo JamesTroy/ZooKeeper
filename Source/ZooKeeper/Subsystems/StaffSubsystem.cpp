@@ -1,4 +1,5 @@
 #include "StaffSubsystem.h"
+#include "Buildings/EnclosureActor.h"
 #include "ZooKeeper.h"
 
 bool UStaffSubsystem::ShouldCreateSubsystem(UObject* Outer) const

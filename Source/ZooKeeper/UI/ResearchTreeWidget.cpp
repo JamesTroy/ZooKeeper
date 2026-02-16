@@ -1,9 +1,38 @@
 #include "ResearchTreeWidget.h"
 
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
 #include "Components/ProgressBar.h"
 #include "Components/PanelWidget.h"
+#include "Blueprint/WidgetTree.h"
 #include "ZooKeeper.h"
+
+TSharedRef<SWidget> UResearchTreeWidget::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		UCanvasPanel* RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
+		WidgetTree->RootWidget = RootCanvas;
+
+		UTextBlock* Placeholder = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Placeholder"));
+		Placeholder->SetText(FText::FromString(TEXT("[Research Tree - Coming Soon]")));
+		FSlateFontInfo Font = Placeholder->GetFont();
+		Font.Size = 18;
+		Placeholder->SetFont(Font);
+		Placeholder->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		UCanvasPanelSlot* Slot = RootCanvas->AddChildToCanvas(Placeholder);
+		Slot->SetAnchors(FAnchors(0.5f, 0.5f));
+		Slot->SetAlignment(FVector2D(0.5f, 0.5f));
+		Slot->SetAutoSize(true);
+
+		ResearchNodesPanel = nullptr;
+		CurrentResearchText = nullptr;
+		ResearchProgressBar = nullptr;
+	}
+
+	return Super::RebuildWidget();
+}
 
 void UResearchTreeWidget::RefreshResearchTree()
 {
@@ -13,14 +42,8 @@ void UResearchTreeWidget::RefreshResearchTree()
 		return;
 	}
 
-	// Clear existing research node widgets.
 	ResearchNodesPanel->ClearChildren();
 
-	// TODO: Query the ResearchSubsystem (not yet implemented) for all research nodes
-	// and populate the panel. The Blueprint child widget will handle creating
-	// individual research node widgets with name, cost, prerequisites, and status.
-
-	// Update current research display.
 	UpdateResearchProgress();
 
 	UE_LOG(LogZooKeeper, Log, TEXT("ResearchTreeWidget: Research tree refreshed."));
@@ -34,13 +57,8 @@ void UResearchTreeWidget::StartResearchClicked(FName ResearchID)
 		return;
 	}
 
-	// TODO: Call ResearchSubsystem->StartResearch(ResearchID) once the subsystem is implemented.
-	// The subsystem will validate prerequisites, check costs via EconomySubsystem,
-	// and begin the research timer.
-
 	UE_LOG(LogZooKeeper, Log, TEXT("ResearchTreeWidget: Start research clicked for '%s'."), *ResearchID.ToString());
 
-	// Update the display to reflect the newly started research.
 	if (CurrentResearchText)
 	{
 		CurrentResearchText->SetText(FText::FromName(ResearchID));
@@ -54,18 +72,13 @@ void UResearchTreeWidget::StartResearchClicked(FName ResearchID)
 
 void UResearchTreeWidget::UpdateResearchProgress()
 {
-	// TODO: Query the ResearchSubsystem (not yet implemented) for current research
-	// progress and update the display accordingly.
-
 	if (CurrentResearchText)
 	{
-		// Placeholder until ResearchSubsystem is implemented.
 		CurrentResearchText->SetText(FText::FromString(TEXT("No Research Active")));
 	}
 
 	if (ResearchProgressBar)
 	{
-		// Placeholder until ResearchSubsystem is implemented.
 		ResearchProgressBar->SetPercent(0.0f);
 	}
 }

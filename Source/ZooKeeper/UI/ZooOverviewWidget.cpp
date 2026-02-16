@@ -1,17 +1,47 @@
 #include "ZooOverviewWidget.h"
 
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
 #include "Components/TextBlock.h"
+#include "Blueprint/WidgetTree.h"
 #include "Core/ZooGameState.h"
 #include "Subsystems/AnimalManagerSubsystem.h"
 #include "ZooKeeper.h"
+
+TSharedRef<SWidget> UZooOverviewWidget::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		UCanvasPanel* RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
+		WidgetTree->RootWidget = RootCanvas;
+
+		UTextBlock* Placeholder = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Placeholder"));
+		Placeholder->SetText(FText::FromString(TEXT("[Zoo Overview - Coming Soon]")));
+		FSlateFontInfo Font = Placeholder->GetFont();
+		Font.Size = 18;
+		Placeholder->SetFont(Font);
+		Placeholder->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		UCanvasPanelSlot* Slot = RootCanvas->AddChildToCanvas(Placeholder);
+		Slot->SetAnchors(FAnchors(0.5f, 0.5f));
+		Slot->SetAlignment(FVector2D(0.5f, 0.5f));
+		Slot->SetAutoSize(true);
+
+		ZooNameText = nullptr;
+		ReputationText = nullptr;
+		VisitorCountText = nullptr;
+		AnimalCountText = nullptr;
+		StaffCountText = nullptr;
+		WeatherText = nullptr;
+	}
+
+	return Super::RebuildWidget();
+}
 
 void UZooOverviewWidget::NativeConstruct()
 {
 	Super::NativeConstruct();
 
 	RefreshTimer = 0.0f;
-
-	// Perform an initial refresh.
 	RefreshOverview();
 }
 
@@ -35,14 +65,11 @@ void UZooOverviewWidget::RefreshOverview()
 		return;
 	}
 
-	// Pull data from the ZooGameState.
 	AZooGameState* GameState = Cast<AZooGameState>(World->GetGameState());
 	if (GameState)
 	{
 		if (ZooNameText)
 		{
-			// The zoo name could come from a save file or game instance.
-			// For now, display a default until a naming system is implemented.
 			ZooNameText->SetText(FText::FromString(TEXT("My Zoo")));
 		}
 
@@ -69,17 +96,14 @@ void UZooOverviewWidget::RefreshOverview()
 		UE_LOG(LogZooKeeper, Warning, TEXT("ZooOverviewWidget: ZooGameState not found."));
 	}
 
-	// Pull animal count from the AnimalManagerSubsystem.
 	UAnimalManagerSubsystem* AnimalMgr = World->GetSubsystem<UAnimalManagerSubsystem>();
 	if (AnimalMgr && AnimalCountText)
 	{
 		AnimalCountText->SetText(FText::FromString(FString::Printf(TEXT("%d"), AnimalMgr->GetAnimalCount())));
 	}
 
-	// Staff count from the StaffSubsystem (not yet implemented).
 	if (StaffCountText)
 	{
-		// TODO: Query StaffSubsystem for total staff count once implemented.
 		StaffCountText->SetText(FText::FromString(TEXT("0")));
 	}
 }

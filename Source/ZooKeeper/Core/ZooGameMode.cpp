@@ -5,7 +5,8 @@
 #include "ZooKeeperCharacter.h"
 #include "ZooKeeper.h"
 
-#include "GameFramework/HUD.h"
+#include "UI/ZooHUD.h"
+#include "Engine/Engine.h"
 #include "UObject/ConstructorHelpers.h"
 
 AZooGameMode::AZooGameMode()
@@ -14,7 +15,7 @@ AZooGameMode::AZooGameMode()
 	DefaultPawnClass = AZooKeeperCharacter::StaticClass();
 	PlayerControllerClass = AZooPlayerController::StaticClass();
 	GameStateClass = AZooGameState::StaticClass();
-	HUDClass = AHUD::StaticClass();
+	HUDClass = AZooHUD::StaticClass();
 
 	// Economy defaults
 	StartingFunds = 50000;
@@ -37,6 +38,12 @@ void AZooGameMode::StartPlay()
 	Super::StartPlay();
 
 	UE_LOG(LogZooKeeper, Log, TEXT("ZooGameMode::StartPlay - Zoo Keeper game session starting."));
+
+	if (GEngine)
+	{
+		GEngine->AddOnScreenDebugMessage(-1, 30.0f, FColor::Cyan,
+			FString::Printf(TEXT(">>> GameMode HUDClass = %s <<<"), HUDClass ? *HUDClass->GetName() : TEXT("NULL")));
+	}
 
 	InitializeGameEconomy();
 }

@@ -1,4 +1,6 @@
 #include "BuildingManagerSubsystem.h"
+#include "Buildings/ZooBuildingActor.h"
+#include "Buildings/EnclosureActor.h"
 #include "ZooKeeper.h"
 #include "Engine/World.h"
 

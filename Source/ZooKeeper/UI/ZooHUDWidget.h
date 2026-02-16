@@ -15,9 +15,7 @@ class UInteractionComponent;
  *
  * Main heads-up display widget for the Zoo Keeper game. Shows the current
  * time of day, day number, player funds, interaction prompts, and a crosshair.
- * Designed as a C++ base class for a Blueprint child widget (WBP_ZooHUD)
- * that provides the visual layout. All bound widgets use meta=(BindWidget)
- * so the Blueprint child must contain matching named widgets.
+ * Builds its widget tree entirely in C++ — no Blueprint asset required.
  */
 UCLASS(meta = (DisplayName = "Zoo HUD Widget"))
 class ZOOKEEPER_API UZooHUDWidget : public UUserWidget
@@ -25,30 +23,6 @@ class ZOOKEEPER_API UZooHUDWidget : public UUserWidget
 	GENERATED_BODY()
 
 public:
-	// -------------------------------------------------------------------
-	//  Bound Widgets (must exist in Blueprint child)
-	// -------------------------------------------------------------------
-
-	/** Displays the current in-game time (e.g. "14:35"). */
-	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Zoo|HUD")
-	UTextBlock* TimeText;
-
-	/** Displays the current in-game day (e.g. "Day 7"). */
-	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Zoo|HUD")
-	UTextBlock* DayText;
-
-	/** Displays the player's current funds. */
-	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Zoo|HUD")
-	UTextBlock* FundsText;
-
-	/** Displays a contextual interaction prompt when the player looks at an interactable. */
-	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Zoo|HUD")
-	UTextBlock* InteractionPromptText;
-
-	/** Crosshair image displayed at the center of the screen. */
-	UPROPERTY(meta = (BindWidget), BlueprintReadOnly, Category = "Zoo|HUD")
-	UImage* CrosshairImage;
-
 	// -------------------------------------------------------------------
 	//  Display Update Functions
 	// -------------------------------------------------------------------
@@ -79,11 +53,15 @@ public:
 
 protected:
 	//~ Begin UUserWidget Interface
+	virtual TSharedRef<SWidget> RebuildWidget() override;
 	virtual void NativeConstruct() override;
 	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
 	//~ End UUserWidget Interface
 
 private:
+	/** Builds the UMG widget tree programmatically. */
+	void BuildWidgetTree();
+
 	/** Callback bound to UTimeSubsystem::OnTimeOfDayChanged. */
 	UFUNCTION()
 	void HandleTimeOfDayChanged(float NewTime);
@@ -95,6 +73,25 @@ private:
 	/** Callback bound to UEconomySubsystem::OnFundsChanged. */
 	UFUNCTION()
 	void HandleFundsChanged(int32 NewBalance);
+
+	// -------------------------------------------------------------------
+	//  Widget references (built programmatically)
+	// -------------------------------------------------------------------
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> TimeText;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> DayText;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> FundsText;
+
+	UPROPERTY()
+	TObjectPtr<UTextBlock> InteractionPromptText;
+
+	UPROPERTY()
+	TObjectPtr<UImage> CrosshairImage;
 
 	/** Cached reference to the time subsystem. */
 	UPROPERTY()

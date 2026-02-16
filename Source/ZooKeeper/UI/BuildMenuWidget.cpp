@@ -1,16 +1,47 @@
 #include "BuildMenuWidget.h"
 
+#include "Components/CanvasPanel.h"
+#include "Components/CanvasPanelSlot.h"
+#include "Components/VerticalBox.h"
 #include "Components/TextBlock.h"
 #include "Components/PanelWidget.h"
+#include "Blueprint/WidgetTree.h"
 #include "Data/BuildingDefinition.h"
 #include "Engine/AssetManager.h"
 #include "ZooKeeper.h"
+
+TSharedRef<SWidget> UBuildMenuWidget::RebuildWidget()
+{
+	if (WidgetTree && !WidgetTree->RootWidget)
+	{
+		UCanvasPanel* RootCanvas = WidgetTree->ConstructWidget<UCanvasPanel>(UCanvasPanel::StaticClass(), TEXT("RootCanvas"));
+		WidgetTree->RootWidget = RootCanvas;
+
+		UTextBlock* Placeholder = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(), TEXT("Placeholder"));
+		Placeholder->SetText(FText::FromString(TEXT("[Build Menu - Coming Soon]")));
+		FSlateFontInfo Font = Placeholder->GetFont();
+		Font.Size = 18;
+		Placeholder->SetFont(Font);
+		Placeholder->SetColorAndOpacity(FSlateColor(FLinearColor::White));
+		UCanvasPanelSlot* Slot = RootCanvas->AddChildToCanvas(Placeholder);
+		Slot->SetAnchors(FAnchors(0.5f, 0.5f));
+		Slot->SetAlignment(FVector2D(0.5f, 0.5f));
+		Slot->SetAutoSize(true);
+
+		BuildingListPanel = nullptr;
+		CategoryTitleText = nullptr;
+		SelectedBuildingNameText = nullptr;
+		SelectedBuildingCostText = nullptr;
+		SelectedBuildingDescText = nullptr;
+	}
+
+	return Super::RebuildWidget();
+}
 
 void UBuildMenuWidget::ShowCategory(EBuildingCategory Category)
 {
 	CurrentCategory = Category;
 
-	// Update the category title text.
 	if (CategoryTitleText)
 	{
 		const UEnum* Enum = StaticEnum<EBuildingCategory>();
@@ -37,7 +68,6 @@ void UBuildMenuWidget::SelectBuilding(UBuildingDefinition* Definition)
 
 	SelectedDefinition = Definition;
 
-	// Update detail display.
 	if (SelectedBuildingNameText)
 	{
 		SelectedBuildingNameText->SetText(Definition->DisplayName);
@@ -53,7 +83,6 @@ void UBuildMenuWidget::SelectBuilding(UBuildingDefinition* Definition)
 		SelectedBuildingDescText->SetText(Definition->Description);
 	}
 
-	// Broadcast the selection delegate.
 	OnBuildingSelected.Broadcast(Definition);
 
 	UE_LOG(LogZooKeeper, Log, TEXT("BuildMenuWidget: Selected building '%s' (Cost: %d)."),
@@ -68,10 +97,8 @@ void UBuildMenuWidget::RefreshBuildingList()
 		return;
 	}
 
-	// Clear existing entries.
 	BuildingListPanel->ClearChildren();
 
-	// Load all building definitions via the Asset Manager and filter by current category.
 	UAssetManager& AssetManager = UAssetManager::Get();
 	TArray<FPrimaryAssetId> AssetIds;
 	AssetManager.GetPrimaryAssetIdList(FPrimaryAssetType("BuildingDefinition"), AssetIds);
@@ -83,10 +110,6 @@ void UBuildMenuWidget::RefreshBuildingList()
 		{
 			if (BuildingDef->Category == CurrentCategory)
 			{
-				// Building entries will be created and added by the Blueprint child class.
-				// The C++ base provides the filtering logic; Blueprint handles the visual
-				// entry widget instantiation. Subclasses should override RefreshBuildingList
-				// or use a BlueprintImplementableEvent for entry creation.
 				UE_LOG(LogZooKeeper, Verbose, TEXT("BuildMenuWidget: Found building '%s' in category."),
 					*BuildingDef->DisplayName.ToString());
 			}
