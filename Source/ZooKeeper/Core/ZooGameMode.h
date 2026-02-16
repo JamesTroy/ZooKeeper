@@ -5,6 +5,7 @@
 #include "ZooGameMode.generated.h"
 
 class AZooEnvironmentSetup;
+class AZooLevelBuilder;
 
 /**
  * AZooGameMode
@@ -37,6 +38,11 @@ public:
   UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Environment")
   TSubclassOf<AZooEnvironmentSetup> EnvironmentSetupClass;
 
+  /** The class used to create the zoo level layout (paths, enclosures, etc.).
+   */
+  UPROPERTY(EditDefaultsOnly, BlueprintReadOnly, Category = "Zoo|Environment")
+  TSubclassOf<AZooLevelBuilder> LevelBuilderClass;
+
 private:
   /** Applies the starting funds to the game state. */
   void InitializeGameEconomy();
@@ -44,6 +50,12 @@ private:
   /** Spawns the environment setup actor. */
   void SpawnEnvironment();
 
+  /** Spawns the zoo level builder. */
+  void SpawnZooLevel();
+
   /** The spawned environment setup instance. */
   TObjectPtr<AZooEnvironmentSetup> EnvironmentSetupInstance;
+
+  /** The spawned level builder instance. */
+  TObjectPtr<AZooLevelBuilder> LevelBuilderInstance;
 };

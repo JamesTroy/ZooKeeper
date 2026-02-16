@@ -4,6 +4,7 @@
 #include "ZooGameState.h"
 #include "ZooKeeper.h"
 #include "ZooKeeperCharacter.h"
+#include "ZooLevelBuilder.h"
 #include "ZooPlayerController.h"
 
 #include "Engine/Engine.h"
@@ -22,6 +23,9 @@ AZooGameMode::AZooGameMode() {
 
   // Default environment class
   EnvironmentSetupClass = AZooEnvironmentSetup::StaticClass();
+
+  // Default level builder class
+  LevelBuilderClass = AZooLevelBuilder::StaticClass();
 }
 
 void AZooGameMode::InitGame(const FString &MapName, const FString &Options,
@@ -53,6 +57,19 @@ void AZooGameMode::StartPlay() {
 
   InitializeGameEconomy();
   SpawnEnvironment();
+  SpawnZooLevel();
+
+  // Move the default pawn near the zoo entrance
+  APawn *PlayerPawn = GetWorld()->GetFirstPlayerController()
+                          ? GetWorld()->GetFirstPlayerController()->GetPawn()
+                          : nullptr;
+  if (PlayerPawn) {
+    // Place in front of the entrance, facing north
+    PlayerPawn->SetActorLocation(FVector(500.0f, 0.0f, 100.0f));
+    PlayerPawn->SetActorRotation(FRotator(0.0f, 0.0f, 0.0f));
+    UE_LOG(LogZooKeeper, Log,
+           TEXT("ZooGameMode - Player moved to zoo entrance."));
+  }
 }
 
 void AZooGameMode::InitializeGameEconomy() {
@@ -95,5 +112,33 @@ void AZooGameMode::SpawnEnvironment() {
     UE_LOG(LogZooKeeper, Error,
            TEXT("ZooGameMode::SpawnEnvironment - Failed to spawn environment "
                 "setup actor."));
+  }
+}
+
+void AZooGameMode::SpawnZooLevel() {
+  if (!LevelBuilderClass) {
+    UE_LOG(LogZooKeeper, Warning,
+           TEXT("ZooGameMode::SpawnZooLevel - LevelBuilderClass is null. "
+                "Skipping."));
+    return;
+  }
+
+  FActorSpawnParameters SpawnParams;
+  SpawnParams.Owner = this;
+  SpawnParams.SpawnCollisionHandlingOverride =
+      ESpawnActorCollisionHandlingMethod::AlwaysSpawn;
+
+  LevelBuilderInstance = GetWorld()->SpawnActor<AZooLevelBuilder>(
+      LevelBuilderClass, FVector::ZeroVector, FRotator::ZeroRotator,
+      SpawnParams);
+
+  if (LevelBuilderInstance) {
+    UE_LOG(LogZooKeeper, Log,
+           TEXT("ZooGameMode - Zoo level builder spawned successfully."));
+  } else {
+    UE_LOG(
+        LogZooKeeper, Error,
+        TEXT(
+            "ZooGameMode::SpawnZooLevel - Failed to spawn zoo level builder."));
   }
 }
