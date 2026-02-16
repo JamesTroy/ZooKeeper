@@ -25,7 +25,7 @@ AZooEnvironmentSetup::AZooEnvironmentSetup() {
   SunLight->Intensity = 10.0f;
   SunLight->LightColor = FColor(255, 242, 217); // warm sunlight
   SunLight->SetRelativeRotation(FRotator(-45.0f, -30.0f, 0.0f));
-  SunLight->bUsedAsAtmosphereSunLight = true;
+  SunLight->bAtmosphereSunLight = true;
   SunLight->CastShadows = true;
   SunLight->CastDynamicShadows = true;
 
@@ -45,7 +45,7 @@ AZooEnvironmentSetup::AZooEnvironmentSetup() {
       CreateDefaultSubobject<UExponentialHeightFogComponent>(TEXT("HeightFog"));
   HeightFog->SetupAttachment(Root);
   HeightFog->FogDensity = 0.003f;
-  HeightFog->FogInscatteringColor = FLinearColor(0.7f, 0.8f, 0.9f, 1.0f);
+  HeightFog->SetFogInscatteringColor(FLinearColor(0.7f, 0.8f, 0.9f, 1.0f));
   HeightFog->FogHeightFalloff = 0.2f;
 
   // ---- Ground Plane ----
