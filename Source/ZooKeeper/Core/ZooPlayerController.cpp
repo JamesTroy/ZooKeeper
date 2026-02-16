@@ -224,9 +224,15 @@ void AZooPlayerController::CreateDefaultInputAssets() {
   }
 
   // --- Mouse Look ---
-  // Mouse X = Yaw
   {
-    DefaultMappingContext->MapKey(LookAction, EKeys::Mouse2D);
+    FEnhancedActionKeyMapping &Mapping =
+        DefaultMappingContext->MapKey(LookAction, EKeys::Mouse2D);
+    // Negate Y axis so moving mouse up looks up (standard FPS convention)
+    UInputModifierNegate *NegY = NewObject<UInputModifierNegate>(this);
+    NegY->bX = false;
+    NegY->bY = true;
+    NegY->bZ = false;
+    Mapping.Modifiers.Add(NegY);
   }
 
   // --- Jump ---

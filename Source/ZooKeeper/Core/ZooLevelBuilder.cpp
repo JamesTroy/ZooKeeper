@@ -142,34 +142,74 @@ void AZooLevelBuilder::BuildEntrance() {
 void AZooLevelBuilder::BuildPaths() {
   const FLinearColor PathColor(0.6f, 0.55f, 0.45f, 1.0f); // sandy stone
 
-  // Main path from entrance going forward (north)
-  for (int32 i = 0; i < 20; ++i) {
+  // Main path from entrance going forward (north) - extended
+  for (int32 i = 0; i < 30; ++i) {
     float X = 800.0f + (i * 300.0f);
     CreateBlock(*FString::Printf(TEXT("MainPath_%d"), i), CubeMesh,
                 FVector(X, 0.0f, 2.0f), FVector(3.0f, 2.5f, 0.04f), PathColor);
   }
 
-  // Left branch path
-  for (int32 i = 0; i < 8; ++i) {
+  // Left branch path - extended
+  for (int32 i = 0; i < 12; ++i) {
     float Y = -300.0f - (i * 300.0f);
     CreateBlock(*FString::Printf(TEXT("LeftPath_%d"), i), CubeMesh,
                 FVector(2600.0f, Y, 2.0f), FVector(2.5f, 3.0f, 0.04f),
                 PathColor);
   }
 
-  // Right branch path
-  for (int32 i = 0; i < 8; ++i) {
+  // Right branch path - extended
+  for (int32 i = 0; i < 12; ++i) {
     float Y = 300.0f + (i * 300.0f);
     CreateBlock(*FString::Printf(TEXT("RightPath_%d"), i), CubeMesh,
                 FVector(2600.0f, Y, 2.0f), FVector(2.5f, 3.0f, 0.04f),
                 PathColor);
   }
 
-  // Cross path connecting left and right branches
-  for (int32 i = 0; i < 15; ++i) {
-    float Y = -2100.0f + (i * 300.0f);
-    CreateBlock(*FString::Printf(TEXT("CrossPath_%d"), i), CubeMesh,
+  // First cross path
+  for (int32 i = 0; i < 20; ++i) {
+    float Y = -3000.0f + (i * 300.0f);
+    CreateBlock(*FString::Printf(TEXT("Cross1_%d"), i), CubeMesh,
                 FVector(4400.0f, Y, 2.0f), FVector(2.5f, 3.0f, 0.04f),
+                PathColor);
+  }
+
+  // Second cross path (deeper into zoo)
+  for (int32 i = 0; i < 20; ++i) {
+    float Y = -3000.0f + (i * 300.0f);
+    CreateBlock(*FString::Printf(TEXT("Cross2_%d"), i), CubeMesh,
+                FVector(7000.0f, Y, 2.0f), FVector(2.5f, 3.0f, 0.04f),
+                PathColor);
+  }
+
+  // Far left branch
+  for (int32 i = 0; i < 10; ++i) {
+    float Y = -300.0f - (i * 300.0f);
+    CreateBlock(*FString::Printf(TEXT("FarLeftPath_%d"), i), CubeMesh,
+                FVector(5700.0f, Y, 2.0f), FVector(2.5f, 3.0f, 0.04f),
+                PathColor);
+  }
+
+  // Far right branch
+  for (int32 i = 0; i < 10; ++i) {
+    float Y = 300.0f + (i * 300.0f);
+    CreateBlock(*FString::Printf(TEXT("FarRightPath_%d"), i), CubeMesh,
+                FVector(5700.0f, Y, 2.0f), FVector(2.5f, 3.0f, 0.04f),
+                PathColor);
+  }
+
+  // Perimeter path - north side
+  for (int32 i = 0; i < 20; ++i) {
+    float X = 1000.0f + (i * 300.0f);
+    CreateBlock(*FString::Printf(TEXT("PerimN_%d"), i), CubeMesh,
+                FVector(X, -3500.0f, 2.0f), FVector(3.0f, 2.0f, 0.04f),
+                PathColor);
+  }
+
+  // Perimeter path - south side
+  for (int32 i = 0; i < 20; ++i) {
+    float X = 1000.0f + (i * 300.0f);
+    CreateBlock(*FString::Printf(TEXT("PerimS_%d"), i), CubeMesh,
+                FVector(X, 3500.0f, 2.0f), FVector(3.0f, 2.0f, 0.04f),
                 PathColor);
   }
 }
@@ -233,6 +273,7 @@ void AZooLevelBuilder::BuildEnclosure(const FVector &Center,
 }
 
 void AZooLevelBuilder::BuildEnclosures() {
+  // --- Front Row (near first cross path) ---
   // Enclosure 1: Lions (front-left) — warm orange fences
   BuildEnclosure(FVector(3500.0f, -1500.0f, 0.0f), TEXT("Lions"),
                  FLinearColor(0.7f, 0.4f, 0.1f, 1.0f), 1200.0f, 1000.0f);
@@ -241,13 +282,32 @@ void AZooLevelBuilder::BuildEnclosures() {
   BuildEnclosure(FVector(3500.0f, 1500.0f, 0.0f), TEXT("Elephants"),
                  FLinearColor(0.5f, 0.5f, 0.5f, 1.0f), 1400.0f, 1200.0f);
 
-  // Enclosure 3: Penguins (back-left) — blue fences
+  // --- Middle Row ---
+  // Enclosure 3: Penguins (mid-left) — blue fences
   BuildEnclosure(FVector(5500.0f, -1500.0f, 0.0f), TEXT("Penguins"),
                  FLinearColor(0.2f, 0.4f, 0.7f, 1.0f), 1000.0f, 1000.0f);
 
-  // Enclosure 4: Monkeys (back-right) — green fences
+  // Enclosure 4: Monkeys (mid-right) — green fences
   BuildEnclosure(FVector(5500.0f, 1500.0f, 0.0f), TEXT("Monkeys"),
                  FLinearColor(0.2f, 0.6f, 0.2f, 1.0f), 1200.0f, 1000.0f);
+
+  // --- Back Row (near second cross path) ---
+  // Enclosure 5: Giraffes (back-left) — yellow-brown fences
+  BuildEnclosure(FVector(7800.0f, -1500.0f, 0.0f), TEXT("Giraffes"),
+                 FLinearColor(0.75f, 0.6f, 0.2f, 1.0f), 1400.0f, 1200.0f);
+
+  // Enclosure 6: Tigers (back-right) — orange-red fences
+  BuildEnclosure(FVector(7800.0f, 1500.0f, 0.0f), TEXT("Tigers"),
+                 FLinearColor(0.8f, 0.35f, 0.05f, 1.0f), 1200.0f, 1000.0f);
+
+  // --- Perimeter enclosures ---
+  // Enclosure 7: Bears (far left) — dark brown fences
+  BuildEnclosure(FVector(5500.0f, -3200.0f, 0.0f), TEXT("Bears"),
+                 FLinearColor(0.35f, 0.2f, 0.1f, 1.0f), 1000.0f, 1200.0f);
+
+  // Enclosure 8: Reptiles (far right) — dark green fences
+  BuildEnclosure(FVector(5500.0f, 3200.0f, 0.0f), TEXT("Reptiles"),
+                 FLinearColor(0.1f, 0.4f, 0.15f, 1.0f), 1200.0f, 1000.0f);
 }
 
 // ---------------------------------------------------------------------------
@@ -273,14 +333,28 @@ void AZooLevelBuilder::BuildTrees() {
       // Along main path
       {FVector(2000.0f, -400.0f, 0.0f), 300.0f, 250.0f, LeafColor},
       {FVector(2000.0f, 400.0f, 0.0f), 270.0f, 230.0f, DarkLeaf},
-      // Between enclosures
+      {FVector(3000.0f, -400.0f, 0.0f), 290.0f, 240.0f, LeafColor},
+      {FVector(3000.0f, 400.0f, 0.0f), 310.0f, 250.0f, DarkLeaf},
+      // Between front enclosures
       {FVector(4500.0f, 0.0f, 0.0f), 320.0f, 260.0f, LeafColor},
       {FVector(4500.0f, -300.0f, 0.0f), 290.0f, 240.0f, DarkLeaf},
       {FVector(4500.0f, 300.0f, 0.0f), 310.0f, 250.0f, LeafColor},
-      // Back area
+      // Between middle and back enclosures
       {FVector(6500.0f, -500.0f, 0.0f), 280.0f, 220.0f, DarkLeaf},
       {FVector(6500.0f, 500.0f, 0.0f), 300.0f, 240.0f, LeafColor},
       {FVector(6500.0f, 0.0f, 0.0f), 250.0f, 200.0f, DarkLeaf},
+      // Near back enclosures
+      {FVector(8500.0f, -400.0f, 0.0f), 330.0f, 270.0f, LeafColor},
+      {FVector(8500.0f, 400.0f, 0.0f), 300.0f, 250.0f, DarkLeaf},
+      {FVector(9000.0f, 0.0f, 0.0f), 350.0f, 280.0f, LeafColor},
+      // Perimeter trees (left side)
+      {FVector(3500.0f, -3000.0f, 0.0f), 280.0f, 230.0f, DarkLeaf},
+      {FVector(5000.0f, -3800.0f, 0.0f), 300.0f, 250.0f, LeafColor},
+      {FVector(7000.0f, -3000.0f, 0.0f), 260.0f, 210.0f, DarkLeaf},
+      // Perimeter trees (right side)
+      {FVector(3500.0f, 3000.0f, 0.0f), 290.0f, 240.0f, LeafColor},
+      {FVector(5000.0f, 3800.0f, 0.0f), 310.0f, 260.0f, DarkLeaf},
+      {FVector(7000.0f, 3000.0f, 0.0f), 270.0f, 220.0f, LeafColor},
   };
 
   for (int32 i = 0; i < Trees.Num(); ++i) {
@@ -311,12 +385,24 @@ void AZooLevelBuilder::BuildBenches() {
     FRotator Rot;
   };
   TArray<FBenchPos> Benches = {
+      // Entrance area
       {FVector(1500.0f, -350.0f, 0.0f), FRotator(0, 0, 0)},
       {FVector(1500.0f, 350.0f, 0.0f), FRotator(0, 0, 0)},
+      // Near front enclosures
       {FVector(3000.0f, -350.0f, 0.0f), FRotator(0, 0, 0)},
       {FVector(3000.0f, 350.0f, 0.0f), FRotator(0, 0, 0)},
+      // First cross path
       {FVector(4400.0f, -350.0f, 0.0f), FRotator(0, 90, 0)},
       {FVector(4400.0f, 350.0f, 0.0f), FRotator(0, 90, 0)},
+      // Mid path area
+      {FVector(5700.0f, -350.0f, 0.0f), FRotator(0, 0, 0)},
+      {FVector(5700.0f, 350.0f, 0.0f), FRotator(0, 0, 0)},
+      // Second cross path
+      {FVector(7000.0f, -350.0f, 0.0f), FRotator(0, 90, 0)},
+      {FVector(7000.0f, 350.0f, 0.0f), FRotator(0, 90, 0)},
+      // Back area
+      {FVector(8500.0f, -350.0f, 0.0f), FRotator(0, 0, 0)},
+      {FVector(8500.0f, 350.0f, 0.0f), FRotator(0, 0, 0)},
   };
 
   for (int32 i = 0; i < Benches.Num(); ++i) {
@@ -346,21 +432,29 @@ void AZooLevelBuilder::BuildPond() {
   const FLinearColor WaterColor(0.1f, 0.3f, 0.6f, 1.0f);
   const FLinearColor RockColor(0.4f, 0.4f, 0.38f, 1.0f);
 
-  // Water surface
-  CreateBlock(TEXT("Pond_Water"), CylinderMesh, FVector(4400.0f, 0.0f, 1.0f),
+  // Pond 1 — center of zoo
+  CreateBlock(TEXT("Pond1_Water"), CylinderMesh, FVector(4400.0f, 0.0f, 1.0f),
               FVector(4.0f, 4.0f, 0.02f), WaterColor);
-
-  // Rocks around the pond
   for (int32 i = 0; i < 8; ++i) {
     float Angle = i * (360.0f / 8.0f);
     float Rad = FMath::DegreesToRadians(Angle);
-    float RockX = 4400.0f + FMath::Cos(Rad) * 420.0f;
-    float RockY = FMath::Sin(Rad) * 420.0f;
-    float RockScale = 0.3f + FMath::FRand() * 0.3f;
+    float RX = 4400.0f + FMath::Cos(Rad) * 420.0f;
+    float RY = FMath::Sin(Rad) * 420.0f;
+    CreateBlock(*FString::Printf(TEXT("Pond1Rock_%d"), i), SphereMesh,
+                FVector(RX, RY, 15.0f), FVector(0.45f, 0.45f, 0.22f),
+                RockColor);
+  }
 
-    CreateBlock(*FString::Printf(TEXT("PondRock_%d"), i), SphereMesh,
-                FVector(RockX, RockY, 15.0f),
-                FVector(RockScale, RockScale, RockScale * 0.5f), RockColor);
+  // Pond 2 — back area near giraffes/tigers
+  CreateBlock(TEXT("Pond2_Water"), CylinderMesh, FVector(8200.0f, 0.0f, 1.0f),
+              FVector(5.0f, 5.0f, 0.02f), WaterColor);
+  for (int32 i = 0; i < 10; ++i) {
+    float Angle = i * (360.0f / 10.0f);
+    float Rad = FMath::DegreesToRadians(Angle);
+    float RX = 8200.0f + FMath::Cos(Rad) * 530.0f;
+    float RY = FMath::Sin(Rad) * 530.0f;
+    CreateBlock(*FString::Printf(TEXT("Pond2Rock_%d"), i), SphereMesh,
+                FVector(RX, RY, 15.0f), FVector(0.4f, 0.4f, 0.2f), RockColor);
   }
 }
 
@@ -376,10 +470,14 @@ void AZooLevelBuilder::BuildInfoSigns() {
     FRotator Rot;
   };
   TArray<FSignInfo> Signs = {
-      {FVector(2800.0f, -1000.0f, 0.0f), FRotator(0, 0, 0)}, // Lions
-      {FVector(2800.0f, 1000.0f, 0.0f), FRotator(0, 0, 0)},  // Elephants
-      {FVector(4800.0f, -1000.0f, 0.0f), FRotator(0, 0, 0)}, // Penguins
-      {FVector(4800.0f, 1000.0f, 0.0f), FRotator(0, 0, 0)},  // Monkeys
+      {FVector(2800.0f, -1000.0f, 0.0f), FRotator(0, 0, 0)},  // Lions
+      {FVector(2800.0f, 1000.0f, 0.0f), FRotator(0, 0, 0)},   // Elephants
+      {FVector(4800.0f, -1000.0f, 0.0f), FRotator(0, 0, 0)},  // Penguins
+      {FVector(4800.0f, 1000.0f, 0.0f), FRotator(0, 0, 0)},   // Monkeys
+      {FVector(7100.0f, -1000.0f, 0.0f), FRotator(0, 0, 0)},  // Giraffes
+      {FVector(7100.0f, 1000.0f, 0.0f), FRotator(0, 0, 0)},   // Tigers
+      {FVector(4800.0f, -2700.0f, 0.0f), FRotator(0, 90, 0)}, // Bears
+      {FVector(4800.0f, 2700.0f, 0.0f), FRotator(0, 90, 0)},  // Reptiles
   };
 
   for (int32 i = 0; i < Signs.Num(); ++i) {
@@ -408,10 +506,10 @@ void AZooLevelBuilder::BuildDecorations() {
 
   // Trash cans along paths
   TArray<FVector> TrashPositions = {
-      FVector(1800.0f, 300.0f, 0.0f),
-      FVector(1800.0f, -300.0f, 0.0f),
-      FVector(3500.0f, 300.0f, 0.0f),
-      FVector(3500.0f, -300.0f, 0.0f),
+      FVector(1800.0f, 300.0f, 0.0f), FVector(1800.0f, -300.0f, 0.0f),
+      FVector(3500.0f, 300.0f, 0.0f), FVector(3500.0f, -300.0f, 0.0f),
+      FVector(5200.0f, 300.0f, 0.0f), FVector(5200.0f, -300.0f, 0.0f),
+      FVector(7000.0f, 300.0f, 0.0f), FVector(7000.0f, -300.0f, 0.0f),
   };
   for (int32 i = 0; i < TrashPositions.Num(); ++i) {
     CreateBlock(*FString::Printf(TEXT("Trash%d"), i), CylinderMesh,
@@ -424,6 +522,9 @@ void AZooLevelBuilder::BuildDecorations() {
       FVector(1000.0f, -350.0f, 0.0f), FVector(1000.0f, 350.0f, 0.0f),
       FVector(2400.0f, -350.0f, 0.0f), FVector(2400.0f, 350.0f, 0.0f),
       FVector(3800.0f, -350.0f, 0.0f), FVector(3800.0f, 350.0f, 0.0f),
+      FVector(5200.0f, -350.0f, 0.0f), FVector(5200.0f, 350.0f, 0.0f),
+      FVector(6600.0f, -350.0f, 0.0f), FVector(6600.0f, 350.0f, 0.0f),
+      FVector(8000.0f, -350.0f, 0.0f), FVector(8000.0f, 350.0f, 0.0f),
   };
   for (int32 i = 0; i < LampPositions.Num(); ++i) {
     // Pole
@@ -438,10 +539,10 @@ void AZooLevelBuilder::BuildDecorations() {
 
   // Flower beds near entrance
   TArray<FVector> FlowerPositions = {
-      FVector(700.0f, -150.0f, 0.0f),
-      FVector(700.0f, 150.0f, 0.0f),
-      FVector(900.0f, -150.0f, 0.0f),
-      FVector(900.0f, 150.0f, 0.0f),
+      FVector(700.0f, -150.0f, 0.0f),  FVector(700.0f, 150.0f, 0.0f),
+      FVector(900.0f, -150.0f, 0.0f),  FVector(900.0f, 150.0f, 0.0f),
+      FVector(4400.0f, -600.0f, 0.0f), FVector(4400.0f, 600.0f, 0.0f),
+      FVector(7000.0f, -600.0f, 0.0f), FVector(7000.0f, 600.0f, 0.0f),
   };
   for (int32 i = 0; i < FlowerPositions.Num(); ++i) {
     // Soil bed
