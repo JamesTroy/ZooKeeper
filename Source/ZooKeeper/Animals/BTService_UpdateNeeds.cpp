@@ -1,6 +1,7 @@
 #include "BTService_UpdateNeeds.h"
 #include "AnimalBase.h"
 #include "AnimalNeedsComponent.h"
+#include "Buildings/EnclosureActor.h"
 #include "ZooKeeper.h"
 #include "AIController.h"
 #include "BehaviorTree/BlackboardComponent.h"

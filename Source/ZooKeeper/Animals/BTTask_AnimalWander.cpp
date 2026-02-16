@@ -3,6 +3,7 @@
 #include "Buildings/EnclosureActor.h"
 #include "ZooKeeper.h"
 #include "AIController.h"
+#include "Navigation/PathFollowingComponent.h"
 #include "NavigationSystem.h"
 #include "BehaviorTree/BlackboardComponent.h"
 

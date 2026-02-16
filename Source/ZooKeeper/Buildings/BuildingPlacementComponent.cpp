@@ -57,7 +57,7 @@ void UBuildingPlacementComponent::EnterBuildMode()
 	// Enable ticking for placement updates
 	PrimaryComponentTick.SetTickFunctionEnable(true);
 
-	OnBuildModeChanged.Broadcast(true);
+	OnPlacementBuildModeChanged.Broadcast(true);
 	UE_LOG(LogZooKeeper, Log, TEXT("BuildingPlacement: Entered build mode with class '%s'."),
 		*SelectedBuildingClass->GetName());
 }
@@ -75,7 +75,7 @@ void UBuildingPlacementComponent::ExitBuildMode()
 	// Disable ticking when not in build mode
 	PrimaryComponentTick.SetTickFunctionEnable(false);
 
-	OnBuildModeChanged.Broadcast(false);
+	OnPlacementBuildModeChanged.Broadcast(false);
 	UE_LOG(LogZooKeeper, Log, TEXT("BuildingPlacement: Exited build mode."));
 }
 
@@ -235,7 +235,7 @@ bool UBuildingPlacementComponent::ConfirmPlacement()
 
 	NewBuilding->bIsPlaced = true;
 
-	OnBuildingPlaced.Broadcast(NewBuilding);
+	OnBuildingPlacementConfirmed.Broadcast(NewBuilding);
 	UE_LOG(LogZooKeeper, Log, TEXT("BuildingPlacement: Placed building '%s' at %s."),
 		*NewBuilding->BuildingName, *SpawnLocation.ToString());
 

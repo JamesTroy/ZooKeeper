@@ -185,7 +185,7 @@ void UFinancePanelWidget::AddTransactionEntry(const FZooTransaction& Transaction
 	static int32 TxnIndex = 0;
 	FString Sign = Transaction.bIsExpense ? TEXT("-") : TEXT("+");
 	FString TxnStr = FString::Printf(TEXT("  %s$%d  |  %s"),
-		*Sign, Transaction.Amount, *Transaction.Description);
+		*Sign, Transaction.Amount, *Transaction.Reason);
 
 	UTextBlock* TxnText = WidgetTree->ConstructWidget<UTextBlock>(UTextBlock::StaticClass(),
 		*FString::Printf(TEXT("Txn_%d"), TxnIndex++));

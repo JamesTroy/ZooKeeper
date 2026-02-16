@@ -3,6 +3,7 @@
 #include "AnimalNeedsComponent.h"
 #include "ZooKeeper.h"
 #include "AIController.h"
+#include "Navigation/PathFollowingComponent.h"
 #include "EngineUtils.h"
 
 UBTTask_AnimalSocialize::UBTTask_AnimalSocialize()

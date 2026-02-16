@@ -120,7 +120,7 @@ void AStaffCharacter::PerformDuty()
 			if (Health < 0.5f)
 			{
 				const float HealAmount = 0.3f * Efficiency;
-				Animal->NeedsComponent->ModifyNeed(FName("Health"), HealAmount);
+				Animal->NeedsComponent->Health = FMath::Clamp(Animal->NeedsComponent->Health + HealAmount, 0.0f, 1.0f);
 				UE_LOG(LogZooKeeper, Log, TEXT("Veterinarian [%s] treated animal [%s] in [%s] (healed %.2f)."),
 					*StaffName, *Animal->AnimalName, *AssignedEnclosure->GetName(), HealAmount);
 				return;

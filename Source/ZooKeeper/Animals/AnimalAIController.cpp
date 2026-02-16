@@ -6,6 +6,7 @@
 #include "BehaviorTree/BehaviorTree.h"
 #include "BehaviorTree/BlackboardComponent.h"
 #include "BehaviorTree/BlackboardData.h"
+#include "Buildings/EnclosureActor.h"
 
 AAnimalAIController::AAnimalAIController()
 {
@@ -37,7 +38,7 @@ void AAnimalAIController::OnPossess(APawn* InPawn)
 	// If no behavior tree is manually assigned, try to load from species DataTable.
 	if (!AnimalBehaviorTree)
 	{
-		if (FAnimalSpeciesRow* SpeciesRow = Animal->GetSpeciesData())
+		if (const FAnimalSpeciesRow* SpeciesRow = Animal->GetSpeciesData())
 		{
 			UBehaviorTree* SpeciesBT = SpeciesRow->BehaviorTree.LoadSynchronous();
 			if (SpeciesBT)
@@ -52,14 +53,15 @@ void AAnimalAIController::OnPossess(APawn* InPawn)
 	// Initialize the blackboard.
 	if (AnimalBlackboard)
 	{
-		UseBlackboard(AnimalBlackboard, Blackboard);
+		UBlackboardComponent* BBComp = nullptr;
+		UseBlackboard(AnimalBlackboard, BBComp);
 	}
 
 	// Write initial enclosure reference into the blackboard.
 	// Need values are synced by BTService_UpdateNeeds during behavior tree execution.
-	if (Blackboard)
+	if (UBlackboardComponent* BB = GetBlackboardComponent())
 	{
-		Blackboard->SetValueAsObject(FName("CurrentEnclosure"), Animal->CurrentEnclosure);
+		BB->SetValueAsObject(FName("CurrentEnclosure"), Cast<UObject>(Animal->CurrentEnclosure));
 	}
 
 	// Start the behavior tree.

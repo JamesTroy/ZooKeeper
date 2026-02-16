@@ -58,6 +58,10 @@ public:
 	//  Queries
 	// -------------------------------------------------------------------
 
+	/** Returns all registered enclosures. */
+	UFUNCTION(BlueprintCallable, BlueprintPure, Category = "Zoo|Buildings")
+	TArray<AEnclosureActor*> GetAllEnclosures() const;
+
 	/**
 	 * Finds the enclosure whose bounds contain the given world location.
 	 * @param Location  The world-space position to query.

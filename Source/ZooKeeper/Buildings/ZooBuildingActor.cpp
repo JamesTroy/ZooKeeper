@@ -5,8 +5,8 @@
 #include "ZooKeeper/Subsystems/BuildingManagerSubsystem.h"
 
 AZooBuildingActor::AZooBuildingActor()
-	: PurchaseCost(0)
-	, Condition(1.0f)
+	: Condition(1.0f)
+	, PurchaseCost(0)
 	, MaintenanceCostPerDay(0.0f)
 	, bIsPlaced(false)
 {
@@ -71,7 +71,7 @@ bool AZooBuildingActor::CanInteract_Implementation(AActor* Interactor) const
 //  IZooSaveable Implementation
 // -------------------------------------------------------------------
 
-void AZooBuildingActor::SerializeSaveData_Implementation(FArchive& Ar)
+void AZooBuildingActor::SerializeSaveData(FArchive& Ar)
 {
 	// Serialize transform
 	FTransform CurrentTransform = GetActorTransform();
@@ -91,7 +91,7 @@ void AZooBuildingActor::SerializeSaveData_Implementation(FArchive& Ar)
 	}
 }
 
-FGuid AZooBuildingActor::GetSaveID_Implementation() const
+FGuid AZooBuildingActor::GetSaveID() const
 {
 	return SaveID;
 }

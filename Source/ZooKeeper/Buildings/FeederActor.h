@@ -2,7 +2,6 @@
 
 #include "CoreMinimal.h"
 #include "ZooBuildingActor.h"
-#include "Interaction/InteractableInterface.h"
 #include "Data/ZooDataTypes.h"
 #include "FeederActor.generated.h"
 
@@ -20,7 +19,7 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_TwoParams(FOnFeederRestocked, AFeederActor*, 
  * feeder via the interaction system (costs money).
  */
 UCLASS(BlueprintType, Blueprintable, meta = (DisplayName = "Feeder"))
-class ZOOKEEPER_API AFeederActor : public AZooBuildingActor, public IInteractable
+class ZOOKEEPER_API AFeederActor : public AZooBuildingActor
 {
 	GENERATED_BODY()
 

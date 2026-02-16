@@ -18,7 +18,7 @@ FText AEnrichmentItemActor::GetInteractionPrompt_Implementation() const
 		*DisplayName.ToString(), HappinessBoost * 100.0f));
 }
 
-void AEnrichmentItemActor::Interact_Implementation(AActor* Interactor)
+void AEnrichmentItemActor::OnInteract_Implementation(AActor* Interactor)
 {
 	UE_LOG(LogZooKeeper, Log, TEXT("EnrichmentItemActor: Interacted with '%s'."), *ItemID.ToString());
 }

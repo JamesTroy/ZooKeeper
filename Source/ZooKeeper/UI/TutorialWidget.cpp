@@ -57,7 +57,7 @@ TSharedRef<SWidget> UTutorialWidget::RebuildWidget()
 		StepCounterText->SetColorAndOpacity(FSlateColor(FLinearColor(0.6f, 0.6f, 0.6f)));
 		StepCounterText->SetText(FText::FromString(TEXT("1 / 1")));
 		UHorizontalBoxSlot* CounterSlot = BottomRow->AddChildToHorizontalBox(StepCounterText);
-		CounterSlot->SetSize(FSlateChildSize(1.0f));
+		CounterSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 		CounterSlot->SetPadding(FMargin(0.0f, 0.0f, 8.0f, 0.0f));
 
 		// Next button (center-right)

@@ -22,7 +22,7 @@ public:
 
 	// IInteractable
 	virtual FText GetInteractionPrompt_Implementation() const override;
-	virtual void Interact_Implementation(AActor* Interactor) override;
+	virtual void OnInteract_Implementation(AActor* Interactor) override;
 
 	/** The enrichment item identifier (matches row name in DT_EnrichmentItems). */
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Zoo|Enrichment")

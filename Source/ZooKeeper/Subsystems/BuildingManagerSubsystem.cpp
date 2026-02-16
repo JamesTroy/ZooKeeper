@@ -85,6 +85,19 @@ void UBuildingManagerSubsystem::RegisterEnclosure(AEnclosureActor* Enclosure)
 	UE_LOG(LogZooKeeper, Log, TEXT("BuildingManagerSubsystem - Enclosure registered. Total: %d"), AllEnclosures.Num());
 }
 
+TArray<AEnclosureActor*> UBuildingManagerSubsystem::GetAllEnclosures() const
+{
+	TArray<AEnclosureActor*> Result;
+	for (const TObjectPtr<AEnclosureActor>& Enc : AllEnclosures)
+	{
+		if (Enc)
+		{
+			Result.Add(Enc.Get());
+		}
+	}
+	return Result;
+}
+
 AEnclosureActor* UBuildingManagerSubsystem::FindEnclosureAtLocation(FVector Location) const
 {
 	// Iterate through all enclosures and check if the location is within their bounds.

@@ -54,7 +54,7 @@ TSharedRef<SWidget> USaveLoadWidget::RebuildWidget()
 
 		// Scrollable slot list
 		UScrollBox* ScrollBox = WidgetTree->ConstructWidget<UScrollBox>(UScrollBox::StaticClass(), TEXT("SlotScroll"));
-		PanelLayout->AddChildToVerticalBox(ScrollBox)->SetSize(FSlateChildSize(1.0f));
+		PanelLayout->AddChildToVerticalBox(ScrollBox)->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 
 		SlotListBox = WidgetTree->ConstructWidget<UVerticalBox>(UVerticalBox::StaticClass(), TEXT("SlotListBox"));
 		ScrollBox->AddChild(SlotListBox);
@@ -172,7 +172,7 @@ void USaveLoadWidget::CreateSlotEntry(const FString& SlotName, const FString& Di
 	}
 
 	UHorizontalBoxSlot* LabelSlot = Row->AddChildToHorizontalBox(LabelText);
-	LabelSlot->SetSize(FSlateChildSize(1.0f));
+	LabelSlot->SetSize(FSlateChildSize(ESlateSizeRule::Fill));
 	LabelSlot->SetPadding(FMargin(0.0f, 4.0f, 8.0f, 4.0f));
 
 	// Action text (Save/Load)

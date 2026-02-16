@@ -33,7 +33,7 @@ void AAnimalBase::BeginPlay()
 	Super::BeginPlay();
 
 	// Load species data from the DataTable and apply movement speeds + need decay rates.
-	if (FAnimalSpeciesRow* SpeciesRow = GetSpeciesData())
+	if (const FAnimalSpeciesRow* SpeciesRow = GetSpeciesData())
 	{
 		AnimalWalkSpeed = SpeciesRow->WalkSpeed;
 		AnimalRunSpeed  = SpeciesRow->RunSpeed;
@@ -112,7 +112,7 @@ bool AAnimalBase::CanInteract_Implementation(AActor* Interactor) const
 //  Species Data
 // ---------------------------------------------------------------------------
 
-FAnimalSpeciesRow* AAnimalBase::GetSpeciesData() const
+const FAnimalSpeciesRow* AAnimalBase::GetSpeciesData() const
 {
 	if (!SpeciesDataTable)
 	{

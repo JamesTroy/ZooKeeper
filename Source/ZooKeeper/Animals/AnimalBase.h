@@ -76,8 +76,7 @@ public:
 	 * Looks up the species row in SpeciesDataTable using SpeciesID.
 	 * @return Pointer to the row, or nullptr if not found.
 	 */
-	UFUNCTION(BlueprintCallable, Category = "Zoo|Animal")
-	FAnimalSpeciesRow* GetSpeciesData() const;
+	const FAnimalSpeciesRow* GetSpeciesData() const;
 
 	// -------------------------------------------------------------------
 	//  Enclosure

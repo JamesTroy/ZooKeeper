@@ -7,11 +7,11 @@
 class AZooBuildingActor;
 class UMaterialInterface;
 
-/** Broadcast when build mode is entered or exited. */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuildModeChanged, bool, bIsInBuildMode);
+/** Broadcast when placement build mode is entered or exited. */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnPlacementBuildModeChanged, bool, bIsInBuildMode);
 
-/** Broadcast when a building is successfully placed in the world. */
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuildingPlaced, AZooBuildingActor*, PlacedBuilding);
+/** Broadcast when a building placement is confirmed. */
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_OneParam(FOnBuildingPlacementConfirmed, AZooBuildingActor*, PlacedBuilding);
 
 /**
  * UBuildingPlacementComponent
@@ -135,10 +135,10 @@ public:
 	// -------------------------------------------------------------------
 
 	UPROPERTY(BlueprintAssignable, Category = "Zoo|Building|Placement|Events")
-	FOnBuildModeChanged OnBuildModeChanged;
+	FOnPlacementBuildModeChanged OnPlacementBuildModeChanged;
 
 	UPROPERTY(BlueprintAssignable, Category = "Zoo|Building|Placement|Events")
-	FOnBuildingPlaced OnBuildingPlaced;
+	FOnBuildingPlacementConfirmed OnBuildingPlacementConfirmed;
 
 private:
 	/**

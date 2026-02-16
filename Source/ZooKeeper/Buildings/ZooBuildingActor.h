@@ -88,8 +88,8 @@ public:
 	//  IZooSaveable Interface
 	// -------------------------------------------------------------------
 
-	virtual void SerializeSaveData_Implementation(FArchive& Ar) override;
-	virtual FGuid GetSaveID_Implementation() const override;
+	virtual void SerializeSaveData(FArchive& Ar) override;
+	virtual FGuid GetSaveID() const override;
 
 	// -------------------------------------------------------------------
 	//  Building Functions

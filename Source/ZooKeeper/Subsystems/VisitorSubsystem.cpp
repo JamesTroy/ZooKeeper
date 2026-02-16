@@ -20,7 +20,13 @@ void UVisitorSubsystem::Initialize(FSubsystemCollectionBase& Collection)
 	// Find all actors tagged as visitor spawn points.
 	if (UWorld* World = GetWorld())
 	{
-		UGameplayStatics::GetAllActorsWithTag(World, FName(TEXT("VisitorSpawn")), SpawnPoints);
+		TArray<AActor*> FoundActors;
+		UGameplayStatics::GetAllActorsWithTag(World, FName(TEXT("VisitorSpawn")), FoundActors);
+		SpawnPoints.Empty(FoundActors.Num());
+		for (AActor* Actor : FoundActors)
+		{
+			SpawnPoints.Add(Actor);
+		}
 		UE_LOG(LogZooKeeper, Log, TEXT("VisitorSubsystem::Initialize - Found %d visitor spawn points."), SpawnPoints.Num());
 	}
 

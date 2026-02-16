@@ -6,6 +6,10 @@ public class ZooKeeper : ModuleRules
 	{
 		PCHUsage = PCHUsageMode.UseExplicitOrSharedPCHs;
 
+		// Ensure subdirectory includes (e.g. "Interaction/InteractableInterface.h") resolve from module root.
+		PublicIncludePaths.Add(ModuleDirectory);
+		PrivateIncludePaths.Add(ModuleDirectory);
+
 		PublicDependencyModuleNames.AddRange(new string[]
 		{
 			"Core",
